@@ -15,7 +15,7 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return;
-    connectBookingHub((method) => {
+    connectBookingHub((method: string) => {
       setLive(`${method.replace('Booking', '')} event`);
       partnerApi.assignments().then(setAssignments).catch(console.error);
     });

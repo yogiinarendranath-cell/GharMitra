@@ -20,7 +20,7 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return;
-    connectBookingHub((method) => {
+    connectBookingHub((method: string) => {
       setLive(`${method.replace('Booking', '')} event`);
       refreshAll().catch(console.error);
     });
