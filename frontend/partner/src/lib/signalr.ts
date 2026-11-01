@@ -3,11 +3,13 @@ import { tokenKey } from "./api";
 
 let connection: signalR.HubConnection | null = null;
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5080";
+
 export function connectBookingHub(onEvent: (method: string, payload: any) => void): signalR.HubConnection {
     if (connection && connection.state !== signalR.HubConnectionState.Disconnected) return connection;
 
     connection = new signalR.HubConnectionBuilder()
-        .withUrl("`${import.meta.env.VITE_API_URL || "http://localhost:5080"}/hubs/booking`", {
+        .withUrl(`${API_URL}/hubs/booking`, {
             accessTokenFactory: () => localStorage.getItem(tokenKey) ?? "",
         })
         .withAutomaticReconnect()
