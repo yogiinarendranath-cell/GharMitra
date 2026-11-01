@@ -1,4 +1,4 @@
-const BASE = "https://paste-your-real-cloudflare-url-here";
+const BASE = "https://paste-the-real-cloudflare-url-here";
 
 export type AuthResponse = {
   token: string;
@@ -79,6 +79,7 @@ export const partnerApi = {
   accept: (id: string) =>
     request<Assignment>(`/api/partner/assignments/${id}/accept`, { method: "POST" }),
 };
+
 
 
 
