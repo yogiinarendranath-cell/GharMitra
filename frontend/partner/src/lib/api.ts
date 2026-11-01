@@ -1,4 +1,4 @@
-const BASE = "https://four-random-words-here.trycloudflare.com";
+const BASE = "https://stopped-grew-explains-acknowledge.trycloudflare.com";
 
 export type AuthResponse = {
   token: string;
@@ -79,6 +79,7 @@ export const partnerApi = {
   accept: (id: string) =>
     request<Assignment>(`/api/partner/assignments/${id}/accept`, { method: "POST" }),
 };
+
 
 
 
