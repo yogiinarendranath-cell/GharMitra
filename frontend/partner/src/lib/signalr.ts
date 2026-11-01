@@ -3,7 +3,7 @@ import { tokenKey } from "./api";
 
 let connection: signalR.HubConnection | null = null;
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5080";
+const API_URL = "YOUR_CLOUDFLARE_URL";
 
 export function connectBookingHub(onEvent: (method: string, payload: any) => void): signalR.HubConnection {
     if (connection && connection.state !== signalR.HubConnectionState.Disconnected) return connection;

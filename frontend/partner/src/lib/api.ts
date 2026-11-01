@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:5080";
+const BASE = "YOUR_CLOUDFLARE_URL";
 
 export type AuthResponse = {
   token: string;
@@ -79,3 +79,4 @@ export const partnerApi = {
   accept: (id: string) =>
     request<Assignment>(`/api/partner/assignments/${id}/accept`, { method: "POST" }),
 };
+
