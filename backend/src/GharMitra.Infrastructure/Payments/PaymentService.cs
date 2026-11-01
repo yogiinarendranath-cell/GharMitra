@@ -34,7 +34,6 @@ public class PaymentService : IPaymentService
             throw new InvalidOperationException("Booking is already paid.");
 
         // --- MOCK MODE FALLBACK ---
-        // If keys are not configured, we use Mock Mode so you can test without a Razorpay account.
         bool isMock = string.IsNullOrWhiteSpace(_settings.KeyId) || _settings.KeyId.StartsWith("rzp_test_your");
         
         string orderId;
@@ -85,11 +84,7 @@ public class PaymentService : IPaymentService
 
         bool isMock = string.IsNullOrWhiteSpace(_settings.KeyId) || _settings.KeyId.StartsWith("rzp_test_your");
 
-        if (isMock)
-        {
-            // In mock mode, we accept any signature.
-        }
-        else
+        if (!isMock)
         {
             var attributes = new Dictionary<string, string>
             {
@@ -98,8 +93,8 @@ public class PaymentService : IPaymentService
                 { "razorpay_signature", request.RazorpaySignature }
             };
             
-            var utils = new Utils();
-            bool isValid = utils.VerifyPaymentSignature(attributes);
+            // FIXED: Call the static method directly
+            bool isValid = Utils.VerifyPaymentSignature(attributes);
             if (!isValid)
                 throw new InvalidOperationException("Payment signature verification failed.");
         }
