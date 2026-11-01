@@ -33,7 +33,6 @@ public class PaymentService : IPaymentService
         if (booking.PaymentStatus == PaymentStatus.Paid)
             throw new InvalidOperationException("Booking is already paid.");
 
-        // --- MOCK MODE FALLBACK ---
         bool isMock = string.IsNullOrWhiteSpace(_settings.KeyId) || _settings.KeyId.StartsWith("rzp_test_your");
         
         string orderId;
@@ -46,7 +45,7 @@ public class PaymentService : IPaymentService
             var client = new RazorpayClient(_settings.KeyId, _settings.KeySecret);
             var options = new Dictionary<string, object>
             {
-                { "amount", (int)(booking.TotalAmount * 100) }, // Razorpay expects amount in paise
+                { "amount", (int)(booking.TotalAmount * 100) },
                 { "currency", "INR" },
                 { "receipt", booking.BookingNumber }
             };
@@ -93,8 +92,8 @@ public class PaymentService : IPaymentService
                 { "razorpay_signature", request.RazorpaySignature }
             };
             
-            // FIXED: Call the static method directly
-            bool isValid = Utils.VerifyPaymentSignature(attributes);
+            // FIXED: .NET SDK uses camelCase for this method
+            bool isValid = Utils.verifyPaymentSignature(attributes);
             if (!isValid)
                 throw new InvalidOperationException("Payment signature verification failed.");
         }
