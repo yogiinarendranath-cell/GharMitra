@@ -1,4 +1,4 @@
-const BASE = "YOUR_CLOUDFLARE_URL";
+const BASE = "https://your-real-url-here.trycloudflare.com";
 
 export type AuthResponse = {
   token: string;
@@ -76,4 +76,5 @@ export const adminApi = {
       body: JSON.stringify({ notes: notes ?? null }),
     }),
 };
+
 
