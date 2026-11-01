@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using GharMitra.Application.Bookings;
+using GharMitra.Application.Payments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +12,15 @@ namespace GharMitra.Api.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookings;
-    public BookingsController(IBookingService bookings) => _bookings = bookings;
+    private readonly IPaymentService _payments;
 
-    private Guid CurrentUserId =>
-        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    public BookingsController(IBookingService bookings, IPaymentService payments)
+    {
+        _bookings = bookings;
+        _payments = payments;
+    }
+
+    private Guid CurrentUserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpPost]
     public async Task<ActionResult<BookingDto>> Create(CreateBookingRequest request, CancellationToken ct)
@@ -31,6 +37,24 @@ public class BookingsController : ControllerBase
     public async Task<ActionResult<BookingDto>> Cancel(Guid id, CancelBookingRequest request, CancellationToken ct)
     {
         try { return Ok(await _bookings.CancelAsync(CurrentUserId, id, request.Reason, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("{id:guid}/pay")]
+    public async Task<ActionResult<PaymentOrderDto>> Pay(Guid id, CancellationToken ct)
+    {
+        try { return Ok(await _payments.CreateOrderAsync(CurrentUserId, id, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("{id:guid}/verify-payment")]
+    public async Task<IActionResult> VerifyPayment(Guid id, VerifyPaymentRequest request, CancellationToken ct)
+    {
+        try 
+        { 
+            await _payments.VerifyPaymentAsync(CurrentUserId, id, request, ct);
+            return Ok(new { message = "Payment verified successfully." });
+        }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 }

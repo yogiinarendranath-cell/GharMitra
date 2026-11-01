@@ -17,6 +17,8 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<GharMitraDbContext>());
 
         services.Configure<JwtSettings>(config.GetSection("Jwt"));
+        services.Configure<RazorpaySettings>(config.GetSection("Razorpay"));
+        services.AddScoped<GharMitra.Application.Payments.IPaymentService, GharMitra.Infrastructure.Payments.PaymentService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;

@@ -45,7 +45,7 @@ public class BookingService : IBookingService
 
         return new BookingDto(booking.Id, booking.BookingNumber, service.Name,
             booking.ScheduledStartUtc, booking.DurationMinutes, booking.AddressLine,
-            booking.City, booking.TotalAmount, booking.Status.ToString(), null);
+            booking.City, booking.TotalAmount, booking.Status.ToString(), booking.PaymentStatus.ToString(), null);
     }
 
     public async Task<List<BookingDto>> GetMyAsync(Guid customerUserId, CancellationToken ct = default)
@@ -59,7 +59,7 @@ public class BookingService : IBookingService
             .Select(b => new BookingDto(
                 b.Id, b.BookingNumber, b.Service.Name,
                 b.ScheduledStartUtc, b.DurationMinutes, b.AddressLine, b.City,
-                b.TotalAmount, b.Status.ToString(),
+                b.TotalAmount, b.Status.ToString(), b.PaymentStatus.ToString(),
                 b.Assignment == null ? null : b.Assignment.Professional.User.FullName))
             .ToListAsync(ct);
     }
@@ -72,7 +72,7 @@ public class BookingService : IBookingService
             .Select(b => new BookingDto(
                 b.Id, b.BookingNumber, b.Service.Name,
                 b.ScheduledStartUtc, b.DurationMinutes, b.AddressLine, b.City,
-                b.TotalAmount, b.Status.ToString(),
+                b.TotalAmount, b.Status.ToString(), b.PaymentStatus.ToString(),
                 b.Assignment == null ? null : b.Assignment.Professional.User.FullName))
             .ToListAsync(ct);
     }
@@ -89,6 +89,9 @@ public class BookingService : IBookingService
 
         if (booking.Status != BookingStatus.Pending)
             throw new InvalidOperationException($"Cannot assign a booking in status {booking.Status}.");
+        
+        if (booking.PaymentStatus != PaymentStatus.Paid)
+            throw new InvalidOperationException("Cannot assign a booking that has not been paid for.");
 
         var pro = await _db.Professionals.FirstOrDefaultAsync(p => p.Id == professionalId, ct)
             ?? throw new InvalidOperationException("Professional not found.");
@@ -132,7 +135,7 @@ public class BookingService : IBookingService
         return new BookingDto(
             booking.Id, booking.BookingNumber, booking.Service.Name,
             booking.ScheduledStartUtc, booking.DurationMinutes, booking.AddressLine, booking.City,
-            booking.TotalAmount, booking.Status.ToString(),
+            booking.TotalAmount, booking.Status.ToString(), booking.PaymentStatus.ToString(),
             booking.Assignment?.Professional.User.FullName);
     }
 
@@ -142,3 +145,4 @@ public class BookingService : IBookingService
                 p.Id, p.User.FullName, p.City, p.IsVerified, p.IsAvailable, p.Rating))
             .ToListAsync(ct);
 }
+

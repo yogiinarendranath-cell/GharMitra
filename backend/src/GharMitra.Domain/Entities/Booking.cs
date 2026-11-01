@@ -21,6 +21,11 @@ public class Booking : BaseEntity
     public decimal TotalAmount { get; set; }
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
+    // --- Payment Fields ---
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
+    public string? RazorpayOrderId { get; set; }
+    public string? RazorpayPaymentId { get; set; }
+
     public DateTime? CancelledAtUtc { get; set; }
     public string? CancellationReason { get; set; }
 

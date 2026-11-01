@@ -23,6 +23,7 @@ public record BookingDto(
     string City,
     decimal TotalAmount,
     string Status,
+    string PaymentStatus,
     string? ProfessionalName);
 
 public record AssignBookingRequest(Guid ProfessionalId);

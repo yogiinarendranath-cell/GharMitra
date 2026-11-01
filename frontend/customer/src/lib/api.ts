@@ -35,6 +35,7 @@ export type BookingDto = {
   city: string;
   totalAmount: number;
   status: string;
+  paymentStatus: string;
   professionalName: string | null;
 };
 
@@ -76,6 +77,8 @@ export const api = {
   createBooking: (body: unknown) =>
     request<BookingDto>("/api/bookings", { method: "POST", body: JSON.stringify(body) }),
   myBookings: () => request<BookingDto[]>("/api/bookings/my"),
+  payBooking: (id: string) => request<any>(`/api/bookings/${id}/pay`, { method: "POST" }),
+  verifyPayment: (id: string, data: any) => request<any>(`/api/bookings/${id}/verify-payment`, { method: "POST", body: JSON.stringify(data) }),
   cancelBooking: (id: string, reason?: string) =>
     request<BookingDto>(`/api/bookings/${id}/cancel`, {
       method: "POST",

@@ -82,6 +82,8 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
             e.Property(x => x.AddressLine).HasMaxLength(500);
             e.Property(x => x.City).HasMaxLength(100);
             e.Property(x => x.CancellationReason).HasMaxLength(500);
+            e.Property(x => x.RazorpayOrderId).HasMaxLength(100);
+            e.Property(x => x.RazorpayPaymentId).HasMaxLength(100);
             e.HasOne(x => x.Customer).WithMany(x => x.Bookings)
                 .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Service).WithMany()
