@@ -92,10 +92,15 @@ public class PaymentService : IPaymentService
                 { "razorpay_signature", request.RazorpaySignature }
             };
             
-            // FIXED: .NET SDK uses camelCase for this method
-            bool isValid = Utils.verifyPaymentSignature(attributes);
-            if (!isValid)
+            try
+            {
+                // The SDK throws an exception if the signature is invalid.
+                Utils.verifyPaymentSignature(attributes);
+            }
+            catch (Exception)
+            {
                 throw new InvalidOperationException("Payment signature verification failed.");
+            }
         }
 
         booking.PaymentStatus = PaymentStatus.Paid;
