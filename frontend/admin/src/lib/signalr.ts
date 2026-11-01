@@ -3,7 +3,7 @@ import { tokenKey } from "./api";
 
 let connection: signalR.HubConnection | null = null;
 
-const API_URL = "";
+const API_URL = "https://four-random-words-here.trycloudflare.com";
 
 export function connectBookingHub(onEvent: (method: string, payload: any) => void): signalR.HubConnection {
     if (connection && connection.state !== signalR.HubConnectionState.Disconnected) return connection;
@@ -30,6 +30,7 @@ export function disconnectBookingHub() {
         connection = null;
     }
 }
+
 
 
 

@@ -1,4 +1,4 @@
-const BASE = "";
+const BASE = "https://four-random-words-here.trycloudflare.com";
 
 export type AuthResponse = {
   token: string;
@@ -85,6 +85,7 @@ export const api = {
       body: JSON.stringify({ reason: reason ?? null }),
     }),
 };
+
 
 
 
