@@ -25,6 +25,8 @@ export default function App() {
 
   const [catalog, setCatalog] = useState<ServiceCategoryDto[]>([]);
   const [bookings, setBookings] = useState<BookingDto[]>([]);
+  
+  // Modal State
   const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
   const [address, setAddress] = useState("Flat 101, Baner");
   const [scheduledAt, setScheduledAt] = useState(() => new Date(Date.now() + 3600_000).toISOString().slice(0, 16));
@@ -50,7 +52,7 @@ export default function App() {
   }
 
   async function submitBooking(e: React.FormEvent) {
-    e.preventDefault(); if (!selectedService) return setError("Select a service.");
+    e.preventDefault(); if (!selectedService) return;
     setError(null);
     try {
       await api.createBooking({
@@ -58,7 +60,7 @@ export default function App() {
         durationMinutes: selectedService.durationMinutes, addressLine: address, city,
         pincode: "411045", notes: "Please ring the bell.",
       });
-      setBookings(await api.myBookings()); setSelectedService(null);
+      setBookings(await api.myBookings()); setSelectedService(null); // Close modal
     } catch (err) { setError((err as Error).message); }
   }
 
@@ -98,75 +100,34 @@ export default function App() {
   if (!session) {
     return (
       <div className="app-container">
-        <header className="app-header">
-          <div className="header-inner">
-            <a href="#" className="logo">🏠 GharMitra</a>
-            <div className="header-nav">
-              <button className="btn-outline" onClick={() => { setMode("login"); window.scrollTo(0, 0); }}>Sign In</button>
-            </div>
-          </div>
-        </header>
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav"><button className="btn-outline" onClick={() => { setMode("login"); window.scrollTo(0, 0); }}>Sign In</button></div></div></header>
         <main>
           <div className="hero-main">
             <h1>Get House Help in 10 min</h1>
             <p>Trained, verified Experts for House Help, home cleaning, dishwashing, laundry and more, at your door in about 10 minutes.</p>
-            <div style={{ display: "flex", gap: "1rem", justifyContent: "center", marginBottom: "2rem" }}>
-              <span>✅ Verified Experts</span>
-              <span>⏱️ Instant Booking</span>
-              <span>⭐ 4.8+ Rated</span>
-            </div>
-            <button className="btn-primary" style={{ padding: "1rem 2rem", fontSize: "1.2rem" }} onClick={() => { setMode("register"); window.scrollTo(0, 500); }}>
-              Book Now
-            </button>
+            <button className="btn-primary" style={{ padding: "1rem 2rem", fontSize: "1.2rem", background: "var(--primary)" }} onClick={() => { setMode("register"); window.scrollTo(0, 500); }}>Book Now</button>
           </div>
-
           <div className="how-it-works">
-            <div className="step-card">
-              <div className="step-number">1</div>
-              <h3>Choose your service</h3>
-              <p>Select from home cleaning, cooking, or laundry.</p>
-            </div>
-            <div className="step-card">
-              <div className="step-number">2</div>
-              <h3>Pick a time</h3>
-              <p>Book instantly or schedule for a future date.</p>
-            </div>
-            <div className="step-card">
-              <div className="step-number">3</div>
-              <h3>Sit back and relax</h3>
-              <p>A trained Expert arrives on time and handles everything.</p>
-            </div>
+            <div className="step-card"><div className="step-number">1</div><h3>Choose your service</h3><p>Select from home cleaning, cooking, or laundry.</p></div>
+            <div className="step-card"><div className="step-number">2</div><h3>Pick a time</h3><p>Book instantly or schedule for a future date.</p></div>
+            <div className="step-card"><div className="step-number">3</div><h3>Sit back and relax</h3><p>A trained Expert arrives on time.</p></div>
           </div>
-
           <div className="card" style={{ maxWidth: 400, margin: "0 auto" }}>
             <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>{mode === "login" ? "Welcome Back" : "Create an Account"}</h2>
             <form onSubmit={submitAuth} style={{ display: "grid", gap: "1rem" }}>
-              {mode === "register" && (
-                <>
-                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full name" required />
-                  <input value={city} onChange={e => setCity(e.target.value)} placeholder="City" required />
-                </>
-              )}
+              {mode === "register" && (<><input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full name" required /><input value={city} onChange={e => setCity(e.target.value)} placeholder="City" required /></>)}
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required />
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required />
               <button type="submit" className="btn-primary" style={{ padding: "0.8rem" }}>{mode === "login" ? "Sign In" : "Create Account"}</button>
             </form>
             <p style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.9rem" }}>
               {mode === "login" ? "New here? " : "Already have an account? "}
-              <span style={{ color: "var(--primary)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode(mode === "login" ? "register" : "login")}>
-                {mode === "login" ? "Create an account" : "Sign In"}
-              </span>
+              <span style={{ color: "var(--primary)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode(mode === "login" ? "register" : "login")}>{mode === "login" ? "Create an account" : "Sign In"}</span>
             </p>
             {error && <p style={{ color: "var(--danger)", marginTop: "1rem", textAlign: "center" }}>{error}</p>}
           </div>
         </main>
-        <footer className="app-footer">
-          <div className="footer-inner">
-            <h3>GharMitra</h3>
-            <p>The trusted marketplace for home services in India.</p>
-            <div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div>
-          </div>
-        </footer>
+        <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div></div></footer>
       </div>
     );
   }
@@ -177,20 +138,19 @@ export default function App() {
       <header className="app-header">
         <div className="header-inner">
           <a href="#" className="logo">🏠 GharMitra</a>
-          <div className="header-nav">
-            <span className="user-greeting">Hi, {session.fullName}</span>
-            <button className="btn-outline" onClick={logout}>Sign out</button>
-          </div>
+          <div className="header-nav"><span className="user-greeting">Hi, {session.fullName}</span><button className="btn-outline" onClick={logout}>Sign out</button></div>
         </div>
       </header>
 
       <main>
         {live && <div className="live-bar">📡 Live: {live}</div>}
         
-        <h2 style={{ marginBottom: "1.5rem" }}>Book a Service</h2>
-        <div className="grid-cards" style={{ marginBottom: "3rem" }}>
+        <h2 style={{ marginBottom: "1.5rem" }}>Our Services</h2>
+        
+        {/* FULL WIDTH GRID */}
+        <div className="service-grid-full">
           {catalog.flatMap(c => c.services).map(s => (
-            <div key={s.id} className={`service-card-large ${selectedService?.id === s.id ? "selected" : ""}`} onClick={() => setSelectedService(s)}>
+            <div key={s.id} className="service-card-large" onClick={() => setSelectedService(s)}>
               <img src={SERVICE_IMAGES[s.name] || DEFAULT_IMAGE} alt={s.name} />
               <div className="service-card-overlay">
                 <h3>{s.name}</h3>
@@ -200,53 +160,55 @@ export default function App() {
           ))}
         </div>
 
-        <div className="grid-dashboard">
-          <div>
-            <div className="card" style={{ position: "sticky", top: "100px" }}>
-              <h2 style={{ marginBottom: "1.5rem" }}>Confirm Booking</h2>
-              {selectedService ? (
-                <form onSubmit={submitBooking} style={{ display: "grid", gap: "1rem" }}>
-                  <div style={{ background: "#F9FAFB", padding: "1rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
-                    <strong>{selectedService.name}</strong><br/>
-                    <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>₹{selectedService.basePrice} • {selectedService.durationMinutes} mins</span>
-                  </div>
-                  <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>Address</label><input value={address} onChange={e => setAddress(e.target.value)} required /></div>
-                  <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>When?</label><input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} required /></div>
-                  <button type="submit" className="btn-primary" style={{ padding: "1rem" }}>Confirm & Pay</button>
-                </form>
-              ) : <p style={{ color: "var(--text-muted)" }}>Select a service from above.</p>}
-            </div>
-          </div>
-
-          <div>
-            <h2 style={{ marginBottom: "1.5rem" }}>My Bookings</h2>
-            <div className="card" style={{ padding: 0 }}>
-              {bookings.length === 0 && <p style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No bookings yet.</p>}
-              {bookings.map(b => (
-                <div key={b.id} className="booking-item">
-                  <div className="booking-info">
-                    <h4>{b.serviceName}</h4>
-                    <div className="booking-meta">₹{b.totalAmount} • {new Date(b.scheduledStartUtc).toLocaleString()}</div>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
-                      <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
-                      <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
-                      {b.professionalName && <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>{b.professionalName}</span>}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                    {b.paymentStatus === "Unpaid" && b.status !== "Cancelled" && (
-                      <button onClick={() => handlePay(b)} className="btn-primary btn-sm">Pay Now</button>
-                    )}
-                    {!["Completed", "Cancelled"].includes(b.status) && (
-                      <button onClick={() => cancel(b)} className="btn-danger btn-sm">Cancel</button>
-                    )}
-                  </div>
+        {/* MY BOOKINGS SECTION */}
+        <h2 style={{ marginBottom: "1.5rem", marginTop: "3rem" }}>My Bookings</h2>
+        <div className="card" style={{ padding: 0 }}>
+          {bookings.length === 0 && <p style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No bookings yet.</p>}
+          {bookings.map(b => (
+            <div key={b.id} className="booking-item">
+              <div className="booking-info">
+                <h4>{b.serviceName}</h4>
+                <div className="booking-meta">₹{b.totalAmount} • {new Date(b.scheduledStartUtc).toLocaleString()}</div>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
+                  <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
+                  <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
+                  {b.professionalName && <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Pro: {b.professionalName}</span>}
                 </div>
-              ))}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", minWidth: "100px" }}>
+                {b.paymentStatus === "Unpaid" && b.status !== "Cancelled" && (
+                  <button onClick={() => handlePay(b)} className="btn-primary btn-sm">Pay Now</button>
+                )}
+                {!["Completed", "Cancelled"].includes(b.status) && (
+                  <button onClick={() => cancel(b)} className="btn-danger btn-sm">Cancel</button>
+                )}
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </main>
+
+      {/* BOOKING MODAL */}
+      {selectedService && (
+        <div className="modal-backdrop" onClick={() => setSelectedService(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+              <h2 style={{ margin: 0 }}>Book Service</h2>
+              <button style={{ background: "transparent", fontSize: "1.5rem", color: "var(--text-muted)", padding: 0 }} onClick={() => setSelectedService(null)}>×</button>
+            </div>
+            <form onSubmit={submitBooking} style={{ display: "grid", gap: "1rem" }}>
+              <div style={{ background: "#F9FAFB", padding: "1rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                <strong>{selectedService.name}</strong><br/>
+                <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>₹{selectedService.basePrice} • {selectedService.durationMinutes} mins</span>
+              </div>
+              <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>Address</label><input value={address} onChange={e => setAddress(e.target.value)} required /></div>
+              <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>When?</label><input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} required /></div>
+              <button type="submit" className="btn-primary" style={{ padding: "1rem", marginTop: "0.5rem" }}>Confirm Booking</button>
+            </form>
+          </div>
+        </div>
+      )}
+
       <footer className="app-footer">
         <div className="footer-inner">
           <h3>GharMitra</h3>
