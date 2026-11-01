@@ -1,27 +1,33 @@
-import { useState } from "react";
-import {
-  partnerApi, setToken,
-  type AuthResponse, type Profile, type Assignment,
-} from "./lib/api";
+import { useEffect, useState } from "react";
+import "./App.css";
+import { partnerApi, setToken, type AuthResponse, type Profile, type Assignment } from "./lib/api";
+import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
 
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState("pro@gharmitra.local");
-  const [password, setPassword] = useState("Pro@1234");
+  const [live, setLive] = useState<string | null>(null);
+  const [email, setEmail] = useState("sweta@gharmitra.local");
+  const [password, setPassword] = useState("Test@1234");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (!session) return;
+    connectBookingHub((method) => {
+      setLive(`${method.replace('Booking', '')} event`);
+      partnerApi.assignments().then(setAssignments).catch(console.error);
+    });
+    return () => disconnectBookingHub();
+  }, [session]);
+
   async function login(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
+    e.preventDefault(); setError(null); setBusy(true);
     try {
       const s = await partnerApi.login({ email, password });
       if (s.role !== "Professional") throw new Error("Not a professional account");
-      setToken(s.token);
-      setSession(s);
+      setToken(s.token); setSession(s);
       setProfile(await partnerApi.me());
       setAssignments(await partnerApi.assignments());
     } catch (err) { setError((err as Error).message); }
@@ -30,30 +36,30 @@ export default function App() {
 
   async function accept(a: Assignment) {
     setError(null);
-    try {
-      await partnerApi.accept(a.id);
-      setAssignments(await partnerApi.assignments());
-    } catch (err) { setError((err as Error).message); }
+    try { await partnerApi.accept(a.id); setAssignments(await partnerApi.assignments()); }
+    catch (err) { setError((err as Error).message); }
   }
 
   function logout() {
-    setToken(null);
-    setSession(null);
-    setProfile(null);
-    setAssignments([]);
+    disconnectBookingHub(); setToken(null); setSession(null); setProfile(null); setAssignments([]); setLive(null);
   }
 
   if (!session) {
     return (
-      <div style={{ maxWidth: 360, margin: "60px auto", fontFamily: "sans-serif" }}>
-        <h1>GharMitra Partner</h1>
-        <p style={{ color: "#666" }}>Sign in with your professional account</p>
-        <form onSubmit={login} style={{ display: "grid", gap: 8 }}>
-          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" />
-          <button type="submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
-        </form>
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
+      <div className="app-container">
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra Partner</a></div></header>
+        <main>
+          <div className="card" style={{ maxWidth: 400, margin: "4rem auto" }}>
+            <h1 style={{ marginBottom: "1.5rem", textAlign: "center" }}>Partner Portal</h1>
+            <form onSubmit={login} style={{ display: "grid", gap: "1rem" }}>
+              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required />
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required />
+              <button type="submit" className="btn-primary" disabled={busy} style={{ padding: "0.8rem" }}>{busy ? "Signing in..." : "Sign in"}</button>
+            </form>
+            {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
+          </div>
+        </main>
+        <footer className="app-footer"><div className="footer-inner">© 2026 GharMitra Partner</div></footer>
       </div>
     );
   }
@@ -61,91 +67,72 @@ export default function App() {
   const verified = profile?.isVerified ?? false;
 
   return (
-    <div style={{ maxWidth: 900, margin: "30px auto", fontFamily: "sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h1 style={{ margin: 0 }}>GharMitra Partner</h1>
-          <p style={{ margin: "4px 0", color: "#666" }}>
-            {profile?.fullName} · {profile?.city}
-          </p>
+    <div className="app-container">
+      <header className="app-header">
+        <div className="header-inner">
+          <a href="#" className="logo">🏠 GharMitra Partner</a>
+          <div className="header-nav">
+            <span className="user-greeting">{profile?.fullName}</span>
+            <button className="btn-outline" onClick={logout}>Sign out</button>
+          </div>
         </div>
-        <button onClick={logout}>Sign out</button>
-      </div>
+      </header>
 
-      {!verified && (
-        <div style={{
-          background: "#fef3c7", border: "1px solid #f59e0b", padding: 12,
-          borderRadius: 6, margin: "16px 0",
-        }}>
-          <strong>⏳ Verification pending</strong>
-          <p style={{ margin: "4px 0" }}>
-            Your profile is not yet verified. You cannot accept assignments until an admin verifies you.
-          </p>
-        </div>
-      )}
+      <main>
+        {live && <div className="live-bar">📡 Live: {live}</div>}
 
-      {verified && (
-        <div style={{
-          background: "#ecfdf5", border: "1px solid #10b981", padding: 12,
-          borderRadius: 6, margin: "16px 0",
-        }}>
-          <strong>✅ Verified professional</strong>
-          {profile?.verifiedAtUtc && (
-            <p style={{ margin: "4px 0", fontSize: 13, color: "#065f46" }}>
-              Verified at {new Date(profile.verifiedAtUtc).toLocaleString()}
-            </p>
-          )}
-        </div>
-      )}
+        {!verified ? (
+          <div style={{ background: "#FEF3C7", border: "1px solid #F59E0B", padding: "1.5rem", borderRadius: "12px", marginBottom: "2rem" }}>
+            <h3 style={{ color: "#92400E", marginBottom: "0.5rem" }}>⏳ Verification Pending</h3>
+            <p style={{ color: "#92400E" }}>Your profile is not yet verified. You cannot accept assignments until an admin verifies you.</p>
+          </div>
+        ) : (
+          <div style={{ background: "#D1FAE5", border: "1px solid #10B981", padding: "1.5rem", borderRadius: "12px", marginBottom: "2rem" }}>
+            <h3 style={{ color: "#065F46", marginBottom: "0.5rem" }}>✅ Verified Professional</h3>
+            <p style={{ color: "#065F46" }}>You are ready to accept assignments. Verified at {new Date(profile!.verifiedAtUtc!).toLocaleString()}</p>
+          </div>
+        )}
 
-      <h2>My assignments</h2>
-      {assignments.length === 0 ? (
-        <p style={{ color: "#666" }}>No assignments yet. Waiting for admin allocation.</p>
-      ) : (
-        <table width="100%" cellPadding={8} border={1} style={{ borderCollapse: "collapse" }}>
-          <thead style={{ background: "#f3f4f6" }}>
-            <tr>
-              <th align="left">Booking</th>
-              <th align="left">Service</th>
-              <th align="left">Customer</th>
-              <th align="left">When</th>
-              <th align="left">Address</th>
-              <th align="left">Status</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+        <h2 style={{ marginBottom: "1.5rem" }}>My Assignments</h2>
+        {assignments.length === 0 ? (
+          <div className="card" style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)" }}>No assignments yet. Waiting for admin allocation.</div>
+        ) : (
+          <div className="grid-cards">
             {assignments.map(a => (
-              <tr key={a.id}>
-                <td>{a.bookingNumber}</td>
-                <td>{a.serviceName}</td>
-                <td>
-                  {a.customerName}<br />
-                  <small style={{ color: "#666" }}>{a.customerPhone}</small>
-                </td>
-                <td>{new Date(a.scheduledStartUtc).toLocaleString()}<br />
-                  <small style={{ color: "#666" }}>{a.durationMinutes} min</small>
-                </td>
-                <td>
-                  {a.addressLine}, {a.city} {a.pincode}
-                  {a.notes && <><br /><small style={{ color: "#666" }}>Note: {a.notes}</small></>}
-                </td>
-                <td>{a.bookingStatus}{a.acceptedAtUtc && " ✓"}</td>
-                <td>
+              <div key={a.id} className="card" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <strong style={{ fontSize: "1.1rem" }}>{a.serviceName}</strong>
+                  <span className={`badge badge-${a.bookingStatus.toLowerCase()}`}>{a.bookingStatus}</span>
+                </div>
+                <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+                  <div>📅 {new Date(a.scheduledStartUtc).toLocaleString()} ({a.durationMinutes} min)</div>
+                  <div>📍 {a.addressLine}, {a.city}</div>
+                  <div>👤 {a.customerName} • {a.customerPhone}</div>
+                </div>
+                {a.notes && <div style={{ background: "#F9FAFB", padding: "0.5rem", borderRadius: "4px", fontSize: "0.85rem", fontStyle: "italic" }}>"{a.notes}"</div>}
+                <div style={{ marginTop: "auto", paddingTop: "1rem" }}>
                   {a.bookingStatus === "Assigned" && verified && (
-                    <button onClick={() => accept(a)}>Accept</button>
+                    <button onClick={() => accept(a)} className="btn-primary" style={{ width: "100%" }}>Accept Assignment</button>
                   )}
                   {a.bookingStatus === "Assigned" && !verified && (
-                    <small style={{ color: "#999" }}>Verify first</small>
+                    <button disabled className="btn-outline" style={{ width: "100%" }}>Verify profile to accept</button>
                   )}
-                </td>
-              </tr>
+                  {a.bookingStatus === "Cancelled" && (
+                    <p style={{ textAlign: "center", color: "var(--danger)", fontSize: "0.85rem", fontWeight: 500 }}>Assignment Cancelled</p>
+                  )}
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      )}
+          </div>
+        )}
+      </main>
 
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      <footer className="app-footer">
+        <div className="footer-inner">
+          <h3>GharMitra Partner</h3>
+          <div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div>
+        </div>
+      </footer>
     </div>
   );
 }
