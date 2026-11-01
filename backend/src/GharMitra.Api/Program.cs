@@ -1,13 +1,23 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using GharMitra.Application;
 using GharMitra.Infrastructure;
 using GharMitra.Infrastructure.Persistence;
 using GharMitra.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog: console + rolling file
+builder.Host.UseSerilog((ctx, cfg) => cfg
+    .WriteTo.Console()
+    .WriteTo.File("logs/gharmitra-.log", rollingInterval: RollingInterval.Day)
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -38,9 +48,22 @@ builder.Services
 builder.Services.AddAuthorization();
 
 builder.Services.AddCors(o => o.AddPolicy("spa", p => p
-    .WithOrigins("http://localhost:5173", "http://localhost:5174")
+    .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175")
     .AllowAnyHeader()
     .AllowAnyMethod()));
+
+// Rate limiting: auth endpoints only
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = 429;
+    o.AddFixedWindowLimiter("auth", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+});
 
 var app = builder.Build();
 
@@ -49,12 +72,13 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
+app.UseSerilogRequestLogging();
 app.UseCors("spa");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Dev convenience: apply migrations + seed on startup
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();

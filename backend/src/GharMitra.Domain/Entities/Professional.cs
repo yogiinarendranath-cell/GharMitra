@@ -8,6 +8,8 @@ public class Professional : BaseEntity
     public User User { get; set; } = null!;
     public string City { get; set; } = string.Empty;
     public bool IsVerified { get; set; }
+    public DateTime? VerifiedAtUtc { get; set; }
+    public string? VerificationNotes { get; set; }
     public bool IsAvailable { get; set; } = true;
     public decimal Rating { get; set; }
     public int TotalJobs { get; set; }

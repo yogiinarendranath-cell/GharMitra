@@ -26,4 +26,11 @@ public class BookingsController : ControllerBase
     [HttpGet("my")]
     public async Task<ActionResult<List<BookingDto>>> My(CancellationToken ct)
         => Ok(await _bookings.GetMyAsync(CurrentUserId, ct));
+
+    [HttpPost("{id:guid}/cancel")]
+    public async Task<ActionResult<BookingDto>> Cancel(Guid id, CancelBookingRequest request, CancellationToken ct)
+    {
+        try { return Ok(await _bookings.CancelAsync(CurrentUserId, id, request.Reason, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 }

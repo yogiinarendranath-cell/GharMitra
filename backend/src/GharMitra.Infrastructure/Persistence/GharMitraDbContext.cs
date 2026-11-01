@@ -1,4 +1,5 @@
 using GharMitra.Application.Common.Interfaces;
+using GharMitra.Domain.Common;
 using GharMitra.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,19 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
     public DbSet<Booking> Bookings => Set<Booking>();
     public DbSet<BookingAssignment> BookingAssignments => Set<BookingAssignment>();
     public DbSet<Review> Reviews => Set<Review>();
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        {
+            if (entry.State == EntityState.Added)
+                entry.Entity.CreatedAtUtc = now;
+            else if (entry.State == EntityState.Modified)
+                entry.Entity.UpdatedAtUtc = now;
+        }
+        return base.SaveChangesAsync(cancellationToken);
+    }
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -42,6 +56,7 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
         {
             e.Property(x => x.City).HasMaxLength(100);
             e.Property(x => x.Rating).HasPrecision(3, 2);
+            e.Property(x => x.VerificationNotes).HasMaxLength(500);
         });
 
         b.Entity<ServiceCategory>(e =>
@@ -66,6 +81,7 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
             e.Property(x => x.TotalAmount).HasPrecision(10, 2);
             e.Property(x => x.AddressLine).HasMaxLength(500);
             e.Property(x => x.City).HasMaxLength(100);
+            e.Property(x => x.CancellationReason).HasMaxLength(500);
             e.HasOne(x => x.Customer).WithMany(x => x.Bookings)
                 .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Service).WithMany()

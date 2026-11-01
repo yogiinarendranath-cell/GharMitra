@@ -87,8 +87,14 @@ public class BookingService : IBookingService
         if (booking.Assignment is not null)
             throw new InvalidOperationException("Booking already assigned.");
 
+        if (booking.Status != BookingStatus.Pending)
+            throw new InvalidOperationException($"Cannot assign a booking in status {booking.Status}.");
+
         var pro = await _db.Professionals.FirstOrDefaultAsync(p => p.Id == professionalId, ct)
             ?? throw new InvalidOperationException("Professional not found.");
+
+        if (!pro.IsVerified)
+            throw new InvalidOperationException("Professional is not verified. Verify the profile first.");
 
         _db.BookingAssignments.Add(new BookingAssignment
         {
@@ -100,6 +106,34 @@ public class BookingService : IBookingService
         booking.UpdatedAtUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<BookingDto> CancelAsync(Guid customerUserId, Guid bookingId, string? reason, CancellationToken ct = default)
+    {
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.UserId == customerUserId, ct)
+            ?? throw new InvalidOperationException("Customer profile not found.");
+
+        var booking = await _db.Bookings
+            .Include(b => b.Service)
+            .Include(b => b.Assignment).ThenInclude(a => a!.Professional).ThenInclude(p => p.User)
+            .FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == customer.Id, ct)
+            ?? throw new InvalidOperationException("Booking not found.");
+
+        if (booking.Status is BookingStatus.Completed or BookingStatus.Cancelled)
+            throw new InvalidOperationException($"Cannot cancel a booking in status {booking.Status}.");
+
+        booking.Status = BookingStatus.Cancelled;
+        booking.CancelledAtUtc = DateTime.UtcNow;
+        booking.CancellationReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+        booking.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        return new BookingDto(
+            booking.Id, booking.BookingNumber, booking.Service.Name,
+            booking.ScheduledStartUtc, booking.DurationMinutes, booking.AddressLine, booking.City,
+            booking.TotalAmount, booking.Status.ToString(),
+            booking.Assignment?.Professional.User.FullName);
     }
 
     public Task<List<AdminProfessionalDto>> GetProfessionalsAsync(CancellationToken ct = default) =>

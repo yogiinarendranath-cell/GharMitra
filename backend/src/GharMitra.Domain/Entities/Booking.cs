@@ -21,5 +21,8 @@ public class Booking : BaseEntity
     public decimal TotalAmount { get; set; }
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
+    public DateTime? CancelledAtUtc { get; set; }
+    public string? CancellationReason { get; set; }
+
     public BookingAssignment? Assignment { get; set; }
 }

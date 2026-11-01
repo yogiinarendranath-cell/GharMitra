@@ -51,6 +51,22 @@ public static class DbSeeder
             Role = UserRole.Admin
         });
 
+        db.Users.Add(new User
+        {
+            FullName = "Test Professional",
+            Email = "pro@gharmitra.local",
+            PhoneNumber = "9999900001",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Pro@1234"),
+            Role = UserRole.Professional,
+            Professional = new Professional
+            {
+                City = "Pune",
+                IsVerified = true,
+                VerifiedAtUtc = DateTime.UtcNow,
+                VerificationNotes = "Seeded verified professional"
+            }
+        });
+
         await db.SaveChangesAsync(ct);
     }
 }

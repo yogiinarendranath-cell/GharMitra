@@ -11,6 +11,8 @@ public record CreateBookingRequest(
     string? Pincode,
     string? Notes);
 
+public record CancelBookingRequest(string? Reason);
+
 public record BookingDto(
     Guid Id,
     string BookingNumber,
