@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GharMitra.Api/GharMitra.Api.csproj" />
+    <Project Path="src/GharMitra.Application/GharMitra.Application.csproj" />
+    <Project Path="src/GharMitra.Domain/GharMitra.Domain.csproj" />
+    <Project Path="src/GharMitra.Infrastructure/GharMitra.Infrastructure.csproj" />
+  </Folder>
+</Solution>
