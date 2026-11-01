@@ -1,49 +1,42 @@
-# Launches all 4 services as background jobs. Logs to scripts/logs/.
-# Windows persist. Must run: Stop-GharMitra.ps1 to end them.
+# Starts all services via cmd.exe in hidden windows. Uses Start-Process
+# so closing the parent terminal does NOT kill the services.
 
 $root = "D:\NarendraData\GharMitra"
 $logDir = "$root\scripts\logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
-# Kill any leftovers
+# Kill anything still running
 & "$root\scripts\Stop-GharMitra.ps1"
 
-Write-Host "Starting API..." -ForegroundColor Cyan
-$apiJob = Start-Job -Name gharmitra-api -ScriptBlock {
-    param($dir, $log)
-    Set-Location $dir
-    & dotnet run --project src/GharMitra.Api/GharMitra.Api.csproj *>&1 |
-        Out-File -FilePath $log -Encoding UTF8
-} -ArgumentList "$root\backend", "$logDir\api.log"
+# ---- API (via cmd for consistent process handling) ----
+$apiCmd = "cd /d `"$root\backend`" && dotnet run --project src\GharMitra.Api\GharMitra.Api.csproj > `"$logDir\api.log`" 2>&1"
+Start-Process cmd.exe -ArgumentList "/c", $apiCmd -WindowStyle Hidden
 
-Write-Host "Starting Customer..." -ForegroundColor Cyan
-Start-Job -Name gharmitra-customer -ScriptBlock {
-    param($dir, $log)
-    Set-Location $dir
-    & npm run dev *>&1 | Out-File -FilePath $log -Encoding UTF8
-} -ArgumentList "$root\frontend\customer", "$logDir\customer.log" | Out-Null
+# ---- SPAs ----
+$apps = @(
+    @{Name="customer"; Dir="$root\frontend\customer"},
+    @{Name="admin";    Dir="$root\frontend\admin"},
+    @{Name="partner";  Dir="$root\frontend\partner"}
+)
 
-Write-Host "Starting Admin..." -ForegroundColor Cyan
-Start-Job -Name gharmitra-admin -ScriptBlock {
-    param($dir, $log)
-    Set-Location $dir
-    & npm run dev *>&1 | Out-File -FilePath $log -Encoding UTF8
-} -ArgumentList "$root\frontend\admin", "$logDir\admin.log" | Out-Null
+foreach ($app in $apps) {
+    Write-Host "Starting $($app.Name)..." -ForegroundColor Cyan
+    $cmd = "cd /d `"$($app.Dir)`" && npm run dev > `"$logDir\$($app.Name).log`" 2>&1"
+    Start-Process cmd.exe -ArgumentList "/c", $cmd -WindowStyle Hidden
+}
 
-Write-Host "Starting Partner..." -ForegroundColor Cyan
-Start-Job -Name gharmitra-partner -ScriptBlock {
-    param($dir, $log)
-    Set-Location $dir
-    & npm run dev *>&1 | Out-File -FilePath $log -Encoding UTF8
-} -ArgumentList "$root\frontend\partner", "$logDir\partner.log" | Out-Null
-
-Write-Host "`nWaiting 30s for services to bind..." -ForegroundColor Yellow
-Start-Sleep -Seconds 30
+Write-Host "`nWaiting 40s for services to bind..." -ForegroundColor Yellow
+Start-Sleep -Seconds 40
 
 Write-Host "`nStatus:" -ForegroundColor White
 "5080","5173","5174","5175" | ForEach-Object {
     $c = New-Object System.Net.Sockets.TcpClient
-    try { $c.Connect("127.0.0.1", $_); Write-Host "  $_ => UP" -ForegroundColor Green }
-    catch { Write-Host "  $_ => DOWN (see $logDir)" -ForegroundColor Red }
-    finally { $c.Close() }
+    try {
+        $c.Connect("127.0.0.1", $_)
+        Write-Host "  $_ => UP" -ForegroundColor Green
+    } catch {
+        Write-Host "  $_ => DOWN (see $logDir)" -ForegroundColor Red
+    } finally { $c.Close() }
 }
+
+Write-Host "`nLogs: $logDir" -ForegroundColor White
