@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
+
+jobs:
+  backend:
+    name: Backend — build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore GharMitra.slnx
+      - name: Build
+        run: dotnet build GharMitra.slnx --no-restore --configuration Release
+      - name: Warn on NuGet advisories
+        run: |
+          dotnet list package --vulnerable --include-transitive | tee vuln.txt
+          if grep -q "has the following vulnerable packages" vuln.txt; then
+            echo "::warning::Vulnerable NuGet packages detected (see job log)"
+          fi
+
+  customer:
+    name: Customer SPA — build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/customer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
+
+  admin:
+    name: Admin SPA — build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
+
+  partner:
+    name: Partner SPA — build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/partner
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
