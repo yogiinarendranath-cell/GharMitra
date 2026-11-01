@@ -48,7 +48,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...(options.headers ?? {}),
     },
   });
-
   if (!res.ok) {
     let msg = res.statusText;
     try {
@@ -70,5 +69,10 @@ export const adminApi = {
     request<void>(`/api/admin/bookings/${bookingId}/assign`, {
       method: "POST",
       body: JSON.stringify({ professionalId }),
+    }),
+  verify: (professionalId: string, notes?: string) =>
+    request<void>(`/api/admin/professionals/${professionalId}/verify`, {
+      method: "POST",
+      body: JSON.stringify({ notes: notes ?? null }),
     }),
 };

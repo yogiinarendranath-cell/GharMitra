@@ -12,7 +12,6 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Serilog: console + rolling file
 builder.Host.UseSerilog((ctx, cfg) => cfg
     .WriteTo.Console()
     .WriteTo.File("logs/gharmitra-.log", rollingInterval: RollingInterval.Day)
@@ -52,13 +51,14 @@ builder.Services.AddCors(o => o.AddPolicy("spa", p => p
     .AllowAnyHeader()
     .AllowAnyMethod()));
 
-// Rate limiting: auth endpoints only
+// Rate limiting: 10/min in prod, 60/min in dev — dev-friendly, prod-strict
+var authPermit = builder.Environment.IsDevelopment() ? 60 : 10;
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = 429;
     o.AddFixedWindowLimiter("auth", opt =>
     {
-        opt.PermitLimit = 10;
+        opt.PermitLimit = authPermit;
         opt.Window = TimeSpan.FromMinutes(1);
         opt.QueueLimit = 0;
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;

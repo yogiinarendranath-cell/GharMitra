@@ -52,6 +52,21 @@ export default function App() {
     } catch (err) { setError((err as Error).message); }
   }
 
+  async function cancel(b: BookingDto) {
+    if (!confirm(`Cancel booking ${b.bookingNumber}?`)) return;
+    setError(null);
+    try {
+      await api.cancelBooking(b.id, "Customer requested cancellation");
+      setBookings(await api.myBookings());
+    } catch (err) { setError((err as Error).message); }
+  }
+
+  function logout() {
+    setToken(null);
+    setSession(null);
+    setBookings([]);
+  }
+
   if (!session) {
     return (
       <div style={{ maxWidth: 420, margin: "60px auto", fontFamily: "sans-serif" }}>
@@ -79,7 +94,10 @@ export default function App() {
 
   return (
     <div style={{ maxWidth: 720, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Welcome, {session.fullName}</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h1 style={{ margin: 0 }}>Welcome, {session.fullName}</h1>
+        <button onClick={logout}>Sign out</button>
+      </div>
 
       <h2>Book a service</h2>
       <form onSubmit={submitBooking} style={{ display: "grid", gap: 8 }}>
@@ -87,7 +105,7 @@ export default function App() {
           <option value="">Select a service</option>
           {catalog.flatMap(c =>
             c.services.map(s => (
-              <option key={s.id} value={s.id}>{c.name} — {s.name} (Rs {s.basePrice})</option>
+              <option key={s.id} value={s.id}>{c.name} — {s.name} (₹{s.basePrice})</option>
             ))
           )}
         </select>
@@ -99,13 +117,45 @@ export default function App() {
       {error && <p style={{ color: "crimson" }}>{error}</p>}
 
       <h2>My bookings</h2>
-      <ul>
-        {bookings.map(b => (
-          <li key={b.id}>
-            <strong>{b.bookingNumber}</strong> — {b.serviceName} — Rs {b.totalAmount} — <em>{b.status}</em>
-            {b.professionalName && <> — assigned to {b.professionalName}</>}
-          </li>
-        ))}
+      {bookings.length === 0 && <p style={{ color: "#666" }}>No bookings yet.</p>}
+      <ul style={{ paddingLeft: 0, listStyle: "none" }}>
+        {bookings.map(b => {
+          const cancellable = !["Completed", "Cancelled"].includes(b.status);
+          return (
+            <li key={b.id} style={{
+              border: "1px solid #ddd", borderRadius: 6, padding: 12, marginBottom: 8,
+              background: b.status === "Cancelled" ? "#f9fafb" : "#fff",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                <div>
+                  <strong>{b.bookingNumber}</strong> — {b.serviceName}
+                  <div style={{ color: "#555", fontSize: 14 }}>
+                    ₹{b.totalAmount} · {new Date(b.scheduledStartUtc).toLocaleString()}
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    <span style={{
+                      display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 13,
+                      background:
+                        b.status === "Pending" ? "#fef3c7" :
+                        b.status === "Assigned" ? "#dbeafe" :
+                        b.status === "Accepted" ? "#d1fae5" :
+                        b.status === "Completed" ? "#e5e7eb" :
+                        b.status === "Cancelled" ? "#fee2e2" : "#f3f4f6",
+                    }}>{b.status}</span>
+                    {b.professionalName && (
+                      <span style={{ marginLeft: 8, color: "#555", fontSize: 14 }}>
+                        · Assigned to {b.professionalName}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {cancellable && (
+                  <button onClick={() => cancel(b)} style={{ color: "#b91c1c" }}>Cancel</button>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

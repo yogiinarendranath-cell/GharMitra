@@ -55,7 +55,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...(options.headers ?? {}),
     },
   });
-
   if (!res.ok) {
     let msg = res.statusText;
     try {
@@ -77,4 +76,9 @@ export const api = {
   createBooking: (body: unknown) =>
     request<BookingDto>("/api/bookings", { method: "POST", body: JSON.stringify(body) }),
   myBookings: () => request<BookingDto[]>("/api/bookings/my"),
+  cancelBooking: (id: string, reason?: string) =>
+    request<BookingDto>(`/api/bookings/${id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason: reason ?? null }),
+    }),
 };
