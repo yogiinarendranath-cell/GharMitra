@@ -1,0 +1,67 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: gharmitra-api:latest
+    container_name: gharmitra-api
+    ports:
+      - "5080:5080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5080
+      - ConnectionStrings__Default=Server=host.docker.internal,1433;Database=GharMitraDb;User Id=sa;Password=GharMitra@2026!;TrustServerCertificate=True;MultipleActiveResultSets=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  customer:
+    build:
+      context: ./frontend/customer
+      dockerfile: Dockerfile
+    image: gharmitra-customer:latest
+    container_name: gharmitra-customer
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+  admin:
+    build:
+      context: ./frontend/admin
+      dockerfile: Dockerfile
+    image: gharmitra-admin:latest
+    container_name: gharmitra-admin
+    ports:
+      - "5174:80"
+    depends_on:
+      - api
+
+  partner:
+    build:
+      context: ./frontend/partner
+      dockerfile: Dockerfile
+    image: gharmitra-partner:latest
+    container_name: gharmitra-partner
+    ports:
+      - "5175:80"
+    depends_on:
+      - api
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: gharmitra-sql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=GharMitra@2026!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - gharmitra-sql-data:/var/opt/mssql
+
+volumes:
+  gharmitra-sql-data:
