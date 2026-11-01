@@ -7,7 +7,7 @@ export function connectBookingHub(onEvent: (method: string, payload: any) => voi
     if (connection && connection.state !== signalR.HubConnectionState.Disconnected) return connection;
 
     connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5080/hubs/booking", {
+        .withUrl("`${import.meta.env.VITE_API_URL || "http://localhost:5080"}/hubs/booking`", {
             accessTokenFactory: () => localStorage.getItem(tokenKey) ?? "",
         })
         .withAutomaticReconnect()

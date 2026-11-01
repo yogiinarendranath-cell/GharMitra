@@ -150,3 +150,92 @@ tr:hover td { background: #F9FAFB; }
 .booking-item:last-child { border-bottom: none; }
 .booking-info h4 { font-size: 1.05rem; margin-bottom: 0.25rem; color: var(--text-main); }
 .booking-meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
+/* --- SNABBIT-INSPIRED HERO & LANDING --- */
+.hero-main {
+  background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=1920') center/cover;
+  color: white;
+  padding: 6rem 2rem;
+  text-align: center;
+  border-radius: 20px;
+  margin-bottom: 3rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+.hero-main h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  letter-spacing: -1px;
+}
+.hero-main p {
+  font-size: 1.25rem;
+  color: #E5E7EB;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+/* --- HOW IT WORKS --- */
+.how-it-works {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin: 3rem 0;
+  padding: 3rem;
+  background: var(--card-bg);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+.step-card { text-align: center; }
+.step-number {
+  background: #FCE7F3;
+  color: var(--primary);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 auto 1rem;
+}
+.step-card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+.step-card p { color: var(--text-muted); font-size: 0.9rem; }
+
+/* --- TRUST BADGES --- */
+.trust-badges {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 2rem 0;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+.trust-badges span { display: flex; align-items: center; gap: 0.5rem; }
+
+/* --- SNABBIT-STYLE SERVICE CARDS --- */
+.service-card-large {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 250px;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.service-card-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+.service-card-large:hover img { transform: scale(1.05); }
+.service-card-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 1.5rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  color: white;
+}
+.service-card-overlay h3 { font-size: 1.3rem; margin-bottom: 0.25rem; }
+.service-card-overlay p { font-size: 0.9rem; opacity: 0.9; }

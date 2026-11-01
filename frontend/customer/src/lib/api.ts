@@ -1,4 +1,4 @@
-const BASE = "http://localhost:5080";
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:5080";
 
 export type AuthResponse = {
   token: string;
@@ -85,3 +85,4 @@ export const api = {
       body: JSON.stringify({ reason: reason ?? null }),
     }),
 };
+
