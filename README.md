@@ -123,3 +123,4 @@ Full verification checklist: docs/operations.md.
 ## Trademark
 
 GharMitra is a working brand. Check domain availability and trademark clearance in India (NICE classes 37, 45) before public launch.
+<!-- Vercel trigger -->
