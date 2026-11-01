@@ -1,4 +1,22 @@
 services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: gharmitra-sql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=GharMitra@2026!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - gharmitra-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P GharMitra@2026! -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   api:
     build:
       context: ./backend
@@ -10,14 +28,16 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5080
-      - ConnectionStrings__Default=Server=host.docker.internal,1433;Database=GharMitraDb;User Id=sa;Password=GharMitra@2026!;TrustServerCertificate=True;MultipleActiveResultSets=true
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - ConnectionStrings__Default=Server=sqlserver,1433;Database=GharMitraDb;User Id=sa;Password=GharMitra@2026!;TrustServerCertificate=True;MultipleActiveResultSets=true
+    depends_on:
+      sqlserver:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5080/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5080/health || exit 1"]
       interval: 15s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 60s
 
   customer:
     build:
@@ -51,17 +71,6 @@ services:
       - "5175:80"
     depends_on:
       - api
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: gharmitra-sql
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=GharMitra@2026!
-      - MSSQL_PID=Developer
-    ports:
-      - "1433:1433"
-    volumes:
-      - gharmitra-sql-data:/var/opt/mssql
 
 volumes:
   gharmitra-sql-data:
