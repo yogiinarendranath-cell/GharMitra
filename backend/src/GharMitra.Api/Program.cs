@@ -1,6 +1,8 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using GharMitra.Api.Hubs;
 using GharMitra.Application;
+using GharMitra.Application.Common.Notifications;
 using GharMitra.Infrastructure;
 using GharMitra.Infrastructure.Persistence;
 using GharMitra.Infrastructure.Security;
@@ -24,6 +26,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+builder.Services.AddScoped<IBookingNotifier, BookingNotifier>();
+builder.Services.AddSignalR();
+
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
     ?? throw new InvalidOperationException("Jwt configuration missing.");
 
@@ -42,16 +47,30 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
 
+// WIDE OPEN CORS FOR DEPLOYMENT TESTING
 builder.Services.AddCors(o => o.AddPolicy("spa", p => p
-    .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175")
+    .SetIsOriginAllowed(_ => true)
     .AllowAnyHeader()
-    .AllowAnyMethod()));
+    .AllowAnyMethod()
+    .AllowCredentials()));
 
-// Rate limiting: 10/min in prod, 60/min in dev — dev-friendly, prod-strict
 var authPermit = builder.Environment.IsDevelopment() ? 60 : 10;
 builder.Services.AddRateLimiter(o =>
 {
@@ -73,11 +92,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
+
+// CRITICAL: CORS MUST BE CALLED BEFORE AUTHENTICATION
 app.UseCors("spa");
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<BookingHub>("/hubs/booking");
 
 if (app.Environment.IsDevelopment())
 {
@@ -88,7 +111,3 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
-
-
-
-
