@@ -87,6 +87,7 @@ export default function App() {
 
       <main>
         {live && <div className="live-bar">📡 Live: {live}</div>}
+        {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>⚠️ {error}</div>}
 
         <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
           <button className={tab === "bookings" ? "btn-primary" : "btn-outline"} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
@@ -103,16 +104,26 @@ export default function App() {
                     <td><strong>{b.bookingNumber}</strong><br/><span style={{fontSize:"0.8rem", color:"var(--text-muted)"}}>{b.city}</span></td>
                     <td>{b.serviceName}</td>
                     <td>₹{b.totalAmount}</td>
-                    <td><span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span></td>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
+                        <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
+                        {/* NEW: Payment Status Badge */}
+                        <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>
+                          {b.paymentStatus}
+                        </span>
+                      </div>
+                    </td>
                     <td>{b.professionalName ?? "—"}</td>
                     <td>
                       {b.status === "Pending" && (
-                        verifiedPros.length === 0
-                          ? <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No verified pros</span>
-                          : <select defaultValue="" onChange={e => { if (e.target.value) assign(b.id, e.target.value); }} style={{ minWidth: "180px", padding: "0.4rem" }}>
-                              <option value="">Select a pro…</option>
-                              {verifiedPros.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
-                            </select>
+                        b.paymentStatus !== 'Paid'
+                          ? <span style={{ color: "var(--warning)", fontSize: "0.85rem", fontWeight: "bold" }}>Awaiting Payment</span>
+                          : verifiedPros.length === 0
+                            ? <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No verified pros</span>
+                            : <select defaultValue="" onChange={e => { if (e.target.value) assign(b.id, e.target.value); }} style={{ minWidth: "180px", padding: "0.4rem" }}>
+                                <option value="">Select a pro…</option>
+                                {verifiedPros.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
+                              </select>
                       )}
                     </td>
                   </tr>

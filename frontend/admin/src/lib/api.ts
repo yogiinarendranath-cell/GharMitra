@@ -19,6 +19,7 @@ export type BookingDto = {
   city: string;
   totalAmount: number;
   status: string;
+  paymentStatus: string; // <-- ADDED THIS LINE
   professionalName: string | null;
 };
 
@@ -76,12 +77,3 @@ export const adminApi = {
       body: JSON.stringify({ notes: notes ?? null }),
     }),
 };
-
-
-
-
-
-
-
-
-
