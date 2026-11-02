@@ -6,8 +6,10 @@ export type AuthResponse = {
   userId: string;
   fullName: string;
   email: string;
+  phoneNumber: string;
   role: string;
   isEmailVerified: boolean;
+  isPhoneVerified: boolean;
 };
 
 export type ServiceDto = {
@@ -78,6 +80,8 @@ export const api = {
     request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
   verifyOtp: (body: { email: string; code: string }) =>
     request<AuthResponse>("/api/auth/verify-otp", { method: "POST", body: JSON.stringify(body) }),
+  verifyPhone: (body: { email: string; code: string }) =>
+    request<AuthResponse>("/api/auth/verify-phone", { method: "POST", body: JSON.stringify(body) }),
   services: () => request<ServiceCategoryDto[]>("/api/services"),
   createBooking: (body: unknown) =>
     request<BookingDto>("/api/bookings", { method: "POST", body: JSON.stringify(body) }),
@@ -88,5 +92,9 @@ export const api = {
       body: JSON.stringify({ reason: reason ?? null }),
     }),
   payBooking: (id: string) => request<any>(`/api/bookings/${id}/pay`, { method: "POST" }),
-  verifyPayment: (id: string, data: any) => request<any>(`/api/bookings/${id}/verify-payment`, { method: "POST", body: JSON.stringify(data) }),
+  verifyPayment: (id: string, data: any) =>
+    request<any>(`/api/bookings/${id}/verify-payment`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
