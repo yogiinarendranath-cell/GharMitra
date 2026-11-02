@@ -369,6 +369,9 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsPhoneVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("OtpCode")
                         .HasColumnType("text");
 
@@ -383,6 +386,12 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("PhoneOtpCode")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PhoneOtpExpiryUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
