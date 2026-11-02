@@ -67,6 +67,7 @@ export default function App() {
         setToken(res.token); setSession(res); setBookings(await api.myBookings());
       } else {
         await api.register({ fullName, email, phoneNumber: "9876543210", password, role: 1, city });
+        setError(null); // Clear any previous errors
         setShowOtp(true); // Go straight to OTP screen after registering
       }
     } catch (err) {
@@ -139,6 +140,9 @@ export default function App() {
         <main>
           <div className="card" style={{ maxWidth: 400, margin: "4rem auto", textAlign: "center" }}>
             <h2 style={{ marginBottom: "1rem" }}>Verify Your Email</h2>
+            <div style={{ background: "#D1FAE5", color: "#065F46", padding: "12px", borderRadius: "8px", marginBottom: "1.5rem", fontSize: "0.95rem", fontWeight: "500" }}>
+              ? Account created successfully! Please verify your email.
+            </div>
             <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>We sent a 6-digit code to <strong>{email}</strong></p>
             <form onSubmit={submitOtp} style={{ display: "grid", gap: "1rem" }}>
               <input 
