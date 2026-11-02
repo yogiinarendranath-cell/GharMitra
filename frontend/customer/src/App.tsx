@@ -66,7 +66,7 @@ export default function App() {
         }
         setToken(res.token); setSession(res); setBookings(await api.myBookings());
       } else {
-        const res = await api.register({ fullName, email, phoneNumber: "9876543210", password, role: 1, city });
+        await api.register({ fullName, email, phoneNumber: "9876543210", password, role: 1, city });
         setShowOtp(true); // Go straight to OTP screen after registering
       }
     } catch (err) {
