@@ -366,6 +366,15 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OtpCode")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("OtpExpiryUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");

@@ -25,4 +25,11 @@ public class AuthController : ControllerBase
         try { return Ok(await _auth.LoginAsync(request, ct)); }
         catch (InvalidOperationException ex) { return Unauthorized(new { message = ex.Message }); }
     }
+
+    [HttpPost("verify-otp")]
+    public async Task<ActionResult<AuthResponse>> VerifyOtp(VerifyOtpRequest request, CancellationToken ct)
+    {
+        try { return Ok(await _auth.VerifyOtpAsync(request, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 }
