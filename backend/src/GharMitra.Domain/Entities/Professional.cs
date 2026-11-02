@@ -13,6 +13,11 @@ public class Professional : BaseEntity
     public bool IsAvailable { get; set; } = true;
     public decimal Rating { get; set; }
     public int TotalJobs { get; set; }
+    
+    // NEW: Location tracking
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public DateTime? LastLocationUpdateUtc { get; set; }
 
     public ICollection<BookingAssignment> Assignments { get; set; } = new List<BookingAssignment>();
 }

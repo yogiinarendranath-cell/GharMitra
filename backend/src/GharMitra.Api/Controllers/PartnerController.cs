@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using GharMitra.Application.Common.Interfaces;
 using GharMitra.Application.Professionals;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace GharMitra.Api.Controllers;
 
@@ -11,7 +13,13 @@ namespace GharMitra.Api.Controllers;
 public class PartnerController : ControllerBase
 {
     private readonly IProfessionalService _pros;
-    public PartnerController(IProfessionalService pros) => _pros = pros;
+    private readonly IApplicationDbContext _db;
+
+    public PartnerController(IProfessionalService pros, IApplicationDbContext db)
+    {
+        _pros = pros;
+        _db = db;
+    }
 
     private Guid CurrentUserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -31,5 +39,21 @@ public class PartnerController : ControllerBase
     {
         try { return Ok(await _pros.AcceptAsync(CurrentUserId, id, ct)); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    public record LocationUpdateRequest(double Latitude, double Longitude);
+
+    [HttpPost("location")]
+    public async Task<IActionResult> UpdateLocation(LocationUpdateRequest request, CancellationToken ct)
+    {
+        var pro = await _db.Professionals.FirstOrDefaultAsync(p => p.UserId == CurrentUserId, ct);
+        if (pro == null) return NotFound();
+
+        pro.Latitude = request.Latitude;
+        pro.Longitude = request.Longitude;
+        pro.LastLocationUpdateUtc = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { message = "Location updated" });
     }
 }

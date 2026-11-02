@@ -17,11 +17,14 @@ public class Booking : BaseEntity
     public string City { get; set; } = string.Empty;
     public string? Pincode { get; set; }
     public string? Notes { get; set; }
+    
+    // NEW: Location tracking
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 
     public decimal TotalAmount { get; set; }
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
-    // --- Payment Fields ---
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
     public string? RazorpayOrderId { get; set; }
     public string? RazorpayPaymentId { get; set; }

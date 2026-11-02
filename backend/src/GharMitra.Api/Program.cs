@@ -29,6 +29,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IBookingNotifier, BookingNotifier>();
 builder.Services.AddSignalR();
 
+builder.Services.AddHostedService<GharMitra.Api.Workers.AutoDispatchWorker>();
+
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
     ?? throw new InvalidOperationException("Jwt configuration missing.");
 

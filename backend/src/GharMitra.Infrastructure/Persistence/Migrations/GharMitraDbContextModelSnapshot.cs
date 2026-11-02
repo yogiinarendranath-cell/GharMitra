@@ -59,6 +59,12 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
@@ -192,6 +198,15 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastLocationUpdateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
 
                     b.Property<decimal>("Rating")
                         .HasPrecision(3, 2)
