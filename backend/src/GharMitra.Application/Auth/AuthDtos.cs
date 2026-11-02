@@ -12,10 +12,13 @@ public record RegisterRequest(
 
 public record LoginRequest(string Email, string Password);
 
+public record VerifyOtpRequest(string Email, string Code);
+
 public record AuthResponse(
     string Token,
     DateTime ExpiresAtUtc,
     Guid UserId,
     string FullName,
     string Email,
-    string Role);
+    string Role,
+    bool IsEmailVerified);

@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.Configure<RazorpaySettings>(config.GetSection("Razorpay"));
         services.AddScoped<GharMitra.Application.Payments.IPaymentService, GharMitra.Infrastructure.Payments.PaymentService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IEmailService, Services.EmailService>();
 
         return services;
     }
