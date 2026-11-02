@@ -2,6 +2,17 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { api, setToken, type AuthResponse, type BookingDto, type ServiceCategoryDto, type ServiceDto } from "./lib/api";
 import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix default Leaflet marker icons in React
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const SERVICE_IMAGES: Record<string, string> = {
   "Standard Home Cleaning": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=600",
@@ -16,17 +27,19 @@ const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1581578731548-c64695cc6
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("gate@test.local");
+  const [email, setEmail] = useState("yogiimanorathnath@gmail.com");
   const [password, setPassword] = useState("Test@1234");
   const [fullName, setFullName] = useState("Test User");
-  const [city, setCity] = useState("Pune");
+  const [city, setCity] = useState("Chennai");
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
 
+  // OTP State
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+
   const [catalog, setCatalog] = useState<ServiceCategoryDto[]>([]);
   const [bookings, setBookings] = useState<BookingDto[]>([]);
-  
-  // Modal State
   const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
   const [address, setAddress] = useState("Flat 101, Baner");
   const [scheduledAt, setScheduledAt] = useState(() => new Date(Date.now() + 3600_000).toISOString().slice(0, 16));
@@ -35,7 +48,7 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return;
-    connectBookingHub((method) => {
+    connectBookingHub((method: string) => {
       setLive(`${method.replace('Booking', '')} update received`);
       api.myBookings().then(setBookings).catch(console.error);
     });
@@ -45,14 +58,36 @@ export default function App() {
   async function submitAuth(e: React.FormEvent) {
     e.preventDefault(); setError(null);
     try {
-      const res = mode === "login" ? await api.login({ email, password })
-        : await api.register({ fullName, email, phoneNumber: "9876543210", password, role: 1, city });
-      setToken(res.token); setSession(res); setBookings(await api.myBookings());
+      if (mode === "login") {
+        const res = await api.login({ email, password });
+        if (!res.isEmailVerified) {
+          setShowOtp(true);
+          return;
+        }
+        setToken(res.token); setSession(res); setBookings(await api.myBookings());
+      } else {
+        const res = await api.register({ fullName, email, phoneNumber: "9876543210", password, role: 1, city });
+        setShowOtp(true); // Go straight to OTP screen after registering
+      }
+    } catch (err) {
+      const msg = (err as Error).message;
+      setError(msg);
+      if (msg.includes("not verified")) {
+        setShowOtp(true); // Switch to OTP screen if they try to login without verifying
+      }
+    }
+  }
+
+  async function submitOtp(e: React.FormEvent) {
+    e.preventDefault(); setError(null);
+    try {
+      const res = await api.verifyOtp({ email, code: otpCode });
+      setToken(res.token); setSession(res); setShowOtp(false); setBookings(await api.myBookings());
     } catch (err) { setError((err as Error).message); }
   }
 
   async function submitBooking(e: React.FormEvent) {
-    e.preventDefault(); if (!selectedService) return;
+    e.preventDefault(); if (!selectedService) return setError("Select a service.");
     setError(null);
     try {
       await api.createBooking({
@@ -60,7 +95,7 @@ export default function App() {
         durationMinutes: selectedService.durationMinutes, addressLine: address, city,
         pincode: "411045", notes: "Please ring the bell.",
       });
-      setBookings(await api.myBookings()); setSelectedService(null); // Close modal
+      setBookings(await api.myBookings()); setSelectedService(null);
     } catch (err) { setError((err as Error).message); }
   }
 
@@ -94,9 +129,38 @@ export default function App() {
     catch (err) { setError((err as Error).message); }
   }
 
-  function logout() { disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setLive(null); }
+  function logout() { disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setLive(null); setShowOtp(false); }
 
-  // --- LANDING PAGE (Logged Out) ---
+  if (showOtp) {
+    return (
+      <div className="app-container">
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a></div></header>
+        <main>
+          <div className="card" style={{ maxWidth: 400, margin: "4rem auto", textAlign: "center" }}>
+            <h2 style={{ marginBottom: "1rem" }}>Verify Your Email</h2>
+            <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>We sent a 6-digit code to <strong>{email}</strong></p>
+            <form onSubmit={submitOtp} style={{ display: "grid", gap: "1rem" }}>
+              <input 
+                value={otpCode} 
+                onChange={e => setOtpCode(e.target.value)} 
+                placeholder="123456" 
+                maxLength={6} 
+                style={{ textAlign: "center", fontSize: "2rem", letterSpacing: "5px", padding: "1rem" }} 
+                required 
+              />
+              <button type="submit" className="btn-primary" style={{ padding: "1rem" }}>Verify & Login</button>
+            </form>
+            {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
+            <p style={{ marginTop: "1.5rem", fontSize: "0.9rem" }}>
+              <span style={{ color: "var(--primary)", cursor: "pointer" }} onClick={() => setShowOtp(false)}>Back to Login</span>
+            </p>
+          </div>
+        </main>
+        <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p></div></footer>
+      </div>
+    );
+  }
+
   if (!session) {
     return (
       <div className="app-container">
@@ -132,35 +196,35 @@ export default function App() {
     );
   }
 
-  // --- LOGGED IN DASHBOARD ---
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="header-inner">
-          <a href="#" className="logo">🏠 GharMitra</a>
-          <div className="header-nav"><span className="user-greeting">Hi, {session.fullName}</span><button className="btn-outline" onClick={logout}>Sign out</button></div>
-        </div>
+        <div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav"><span className="user-greeting">Hi, {session.fullName}</span><button className="btn-outline" onClick={logout}>Sign out</button></div></div>
       </header>
-
       <main>
         {live && <div className="live-bar">📡 Live: {live}</div>}
         
         <h2 style={{ marginBottom: "1.5rem" }}>Our Services</h2>
         
-        {/* FULL WIDTH GRID */}
         <div className="service-grid-full">
           {catalog.flatMap(c => c.services).map(s => (
-            <div key={s.id} className="service-card-large" onClick={() => setSelectedService(s)}>
+            <div key={s.id} className="service-card-large">
               <img src={SERVICE_IMAGES[s.name] || DEFAULT_IMAGE} alt={s.name} />
               <div className="service-card-overlay">
                 <h3>{s.name}</h3>
                 <p>From ₹{s.basePrice} • {s.durationMinutes} min</p>
+                <button 
+                  className="btn-primary" 
+                  style={{ marginTop: "10px", width: "100%", padding: "0.6rem" }}
+                  onClick={() => setSelectedService(s)}
+                >
+                  Book Now
+                </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* MY BOOKINGS SECTION */}
         <h2 style={{ marginBottom: "1.5rem", marginTop: "3rem" }}>My Bookings</h2>
         <div className="card" style={{ padding: 0 }}>
           {bookings.length === 0 && <p style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No bookings yet.</p>}
@@ -174,6 +238,17 @@ export default function App() {
                   <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
                   {b.professionalName && <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Pro: {b.professionalName}</span>}
                 </div>
+                
+                {b.professionalLatitude && b.professionalLongitude && (
+                  <div style={{ height: '200px', width: '100%', marginTop: '15px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <MapContainer center={[b.professionalLatitude, b.professionalLongitude]} zoom={14} style={{ height: '100%', width: '100%' }}>
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <Marker position={[b.professionalLatitude, b.professionalLongitude]}>
+                        <Popup>{b.professionalName} is on the way!</Popup>
+                      </Marker>
+                    </MapContainer>
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", minWidth: "100px" }}>
                 {b.paymentStatus === "Unpaid" && b.status !== "Cancelled" && (
@@ -209,13 +284,7 @@ export default function App() {
         </div>
       )}
 
-      <footer className="app-footer">
-        <div className="footer-inner">
-          <h3>GharMitra</h3>
-          <p>The trusted marketplace for home services in India.</p>
-          <div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div>
-        </div>
-      </footer>
+      <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div></div></footer>
     </div>
   );
 }
