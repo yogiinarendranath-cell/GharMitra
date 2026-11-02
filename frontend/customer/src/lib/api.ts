@@ -7,6 +7,7 @@ export type AuthResponse = {
   fullName: string;
   email: string;
   role: string;
+  isEmailVerified: boolean;
 };
 
 export type ServiceDto = {
@@ -37,6 +38,8 @@ export type BookingDto = {
   status: string;
   paymentStatus: string;
   professionalName: string | null;
+  professionalLatitude: number | null;
+  professionalLongitude: number | null;
 };
 
 export const tokenKey = "gm_token";
@@ -73,25 +76,17 @@ export const api = {
     request<AuthResponse>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
   login: (body: unknown) =>
     request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
+  verifyOtp: (body: { email: string; code: string }) =>
+    request<AuthResponse>("/api/auth/verify-otp", { method: "POST", body: JSON.stringify(body) }),
   services: () => request<ServiceCategoryDto[]>("/api/services"),
   createBooking: (body: unknown) =>
     request<BookingDto>("/api/bookings", { method: "POST", body: JSON.stringify(body) }),
   myBookings: () => request<BookingDto[]>("/api/bookings/my"),
-  payBooking: (id: string) => request<any>(`/api/bookings/${id}/pay`, { method: "POST" }),
-  verifyPayment: (id: string, data: any) => request<any>(`/api/bookings/${id}/verify-payment`, { method: "POST", body: JSON.stringify(data) }),
   cancelBooking: (id: string, reason?: string) =>
     request<BookingDto>(`/api/bookings/${id}/cancel`, {
       method: "POST",
       body: JSON.stringify({ reason: reason ?? null }),
     }),
+  payBooking: (id: string) => request<any>(`/api/bookings/${id}/pay`, { method: "POST" }),
+  verifyPayment: (id: string, data: any) => request<any>(`/api/bookings/${id}/verify-payment`, { method: "POST", body: JSON.stringify(data) }),
 };
-
-
-
-
-
-
-
-
-
-

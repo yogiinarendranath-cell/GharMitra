@@ -7,6 +7,7 @@ export type AuthResponse = {
   fullName: string;
   email: string;
   role: string;
+  isEmailVerified: boolean;
 };
 
 export type Profile = {
@@ -72,19 +73,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const partnerApi = {
+  register: (body: unknown) =>
+    request<AuthResponse>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
   login: (body: unknown) =>
     request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
+  verifyOtp: (body: { email: string; code: string }) =>
+    request<AuthResponse>("/api/auth/verify-otp", { method: "POST", body: JSON.stringify(body) }),
   me: () => request<Profile>("/api/partner/me"),
   assignments: () => request<Assignment[]>("/api/partner/assignments"),
   accept: (id: string) =>
     request<Assignment>(`/api/partner/assignments/${id}/accept`, { method: "POST" }),
 };
-
-
-
-
-
-
-
-
-

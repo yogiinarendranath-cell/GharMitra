@@ -7,6 +7,7 @@ export type AuthResponse = {
   fullName: string;
   email: string;
   role: string;
+  isEmailVerified: boolean; // <-- ADDED
 };
 
 export type BookingDto = {
@@ -19,7 +20,7 @@ export type BookingDto = {
   city: string;
   totalAmount: number;
   status: string;
-  paymentStatus: string; // <-- ADDED THIS LINE
+  paymentStatus: string;
   professionalName: string | null;
 };
 
