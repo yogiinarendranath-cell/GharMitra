@@ -1,4 +1,5 @@
 using GharMitra.Application.Common.Interfaces;
+using GharMitra.Application.Common.Notifications;
 using GharMitra.Domain.Entities;
 using GharMitra.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,13 @@ namespace GharMitra.Application.Bookings;
 public class BookingService : IBookingService
 {
     private readonly IApplicationDbContext _db;
-    public BookingService(IApplicationDbContext db) => _db = db;
+    private readonly IBookingNotifier _notifier;
+
+    public BookingService(IApplicationDbContext db, IBookingNotifier notifier)
+    {
+        _db = db;
+        _notifier = notifier;
+    }
 
     public async Task<BookingDto> CreateAsync(Guid customerUserId, CreateBookingRequest r, CancellationToken ct = default)
     {
@@ -43,9 +50,14 @@ public class BookingService : IBookingService
         _db.Bookings.Add(booking);
         await _db.SaveChangesAsync(ct);
 
+        await _notifier.NotifyAsync(BookingEventType.Created, new BookingNotificationDto(
+            booking.Id, booking.BookingNumber, service.Name, booking.Status.ToString(),
+            booking.AddressLine, booking.City, booking.TotalAmount, booking.ScheduledStartUtc,
+            null, customerUserId, null, DateTime.UtcNow), ct);
+
         return new BookingDto(booking.Id, booking.BookingNumber, service.Name,
             booking.ScheduledStartUtc, booking.DurationMinutes, booking.AddressLine,
-            booking.City, booking.TotalAmount, booking.Status.ToString(), booking.PaymentStatus.ToString(), null);
+            booking.City, booking.TotalAmount, booking.Status.ToString(), booking.PaymentStatus.ToString(), null, null, null);
     }
 
     public async Task<List<BookingDto>> GetMyAsync(Guid customerUserId, CancellationToken ct = default)
@@ -60,7 +72,9 @@ public class BookingService : IBookingService
                 b.Id, b.BookingNumber, b.Service.Name,
                 b.ScheduledStartUtc, b.DurationMinutes, b.AddressLine, b.City,
                 b.TotalAmount, b.Status.ToString(), b.PaymentStatus.ToString(),
-                b.Assignment == null ? null : b.Assignment.Professional.User.FullName))
+                b.Assignment == null ? null : b.Assignment.Professional.User.FullName,
+                b.Assignment == null ? null : b.Assignment.Professional.Latitude,
+                b.Assignment == null ? null : b.Assignment.Professional.Longitude))
             .ToListAsync(ct);
     }
 
@@ -73,42 +87,43 @@ public class BookingService : IBookingService
                 b.Id, b.BookingNumber, b.Service.Name,
                 b.ScheduledStartUtc, b.DurationMinutes, b.AddressLine, b.City,
                 b.TotalAmount, b.Status.ToString(), b.PaymentStatus.ToString(),
-                b.Assignment == null ? null : b.Assignment.Professional.User.FullName))
+                b.Assignment == null ? null : b.Assignment.Professional.User.FullName,
+                b.Assignment == null ? null : b.Assignment.Professional.Latitude,
+                b.Assignment == null ? null : b.Assignment.Professional.Longitude))
             .ToListAsync(ct);
     }
 
     public async Task AssignAsync(Guid bookingId, Guid professionalId, CancellationToken ct = default)
     {
         var booking = await _db.Bookings
+            .Include(b => b.Customer)
+            .Include(b => b.Service)
             .Include(b => b.Assignment)
             .FirstOrDefaultAsync(b => b.Id == bookingId, ct)
             ?? throw new InvalidOperationException("Booking not found.");
 
         if (booking.Assignment is not null)
             throw new InvalidOperationException("Booking already assigned.");
-
         if (booking.Status != BookingStatus.Pending)
             throw new InvalidOperationException($"Cannot assign a booking in status {booking.Status}.");
-        
         if (booking.PaymentStatus != PaymentStatus.Paid)
             throw new InvalidOperationException("Cannot assign a booking that has not been paid for.");
 
-        var pro = await _db.Professionals.FirstOrDefaultAsync(p => p.Id == professionalId, ct)
+        var pro = await _db.Professionals.Include(p => p.User).FirstOrDefaultAsync(p => p.Id == professionalId, ct)
             ?? throw new InvalidOperationException("Professional not found.");
-
         if (!pro.IsVerified)
             throw new InvalidOperationException("Professional is not verified. Verify the profile first.");
 
-        _db.BookingAssignments.Add(new BookingAssignment
-        {
-            BookingId = booking.Id,
-            ProfessionalId = pro.Id
-        });
-
+        _db.BookingAssignments.Add(new BookingAssignment { BookingId = booking.Id, ProfessionalId = pro.Id });
         booking.Status = BookingStatus.Assigned;
         booking.UpdatedAtUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+
+        await _notifier.NotifyAsync(BookingEventType.Assigned, new BookingNotificationDto(
+            booking.Id, booking.BookingNumber, booking.Service.Name, booking.Status.ToString(),
+            booking.AddressLine, booking.City, booking.TotalAmount, booking.ScheduledStartUtc,
+            pro.User.FullName, booking.Customer.UserId, pro.UserId, DateTime.UtcNow), ct);
     }
 
     public async Task<BookingDto> CancelAsync(Guid customerUserId, Guid bookingId, string? reason, CancellationToken ct = default)
@@ -132,17 +147,23 @@ public class BookingService : IBookingService
 
         await _db.SaveChangesAsync(ct);
 
+        await _notifier.NotifyAsync(BookingEventType.Cancelled, new BookingNotificationDto(
+            booking.Id, booking.BookingNumber, booking.Service.Name, booking.Status.ToString(),
+            booking.AddressLine, booking.City, booking.TotalAmount, booking.ScheduledStartUtc,
+            booking.Assignment?.Professional.User.FullName, customerUserId,
+            booking.Assignment?.Professional.UserId, DateTime.UtcNow), ct);
+
         return new BookingDto(
             booking.Id, booking.BookingNumber, booking.Service.Name,
             booking.ScheduledStartUtc, booking.DurationMinutes, booking.AddressLine, booking.City,
             booking.TotalAmount, booking.Status.ToString(), booking.PaymentStatus.ToString(),
-            booking.Assignment?.Professional.User.FullName);
+            booking.Assignment?.Professional.User.FullName,
+            booking.Assignment?.Professional.Latitude,
+            booking.Assignment?.Professional.Longitude);
     }
 
     public Task<List<AdminProfessionalDto>> GetProfessionalsAsync(CancellationToken ct = default) =>
         _db.Professionals
-            .Select(p => new AdminProfessionalDto(
-                p.Id, p.User.FullName, p.City, p.IsVerified, p.IsAvailable, p.Rating))
+            .Select(p => new AdminProfessionalDto(p.Id, p.User.FullName, p.City, p.IsVerified, p.IsAvailable, p.Rating))
             .ToListAsync(ct);
 }
-

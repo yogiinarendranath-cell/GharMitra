@@ -24,7 +24,9 @@ public record BookingDto(
     decimal TotalAmount,
     string Status,
     string PaymentStatus,
-    string? ProfessionalName);
+    string? ProfessionalName,
+    double? ProfessionalLatitude,
+    double? ProfessionalLongitude);
 
 public record AssignBookingRequest(Guid ProfessionalId);
 
