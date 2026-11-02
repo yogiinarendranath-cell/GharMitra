@@ -7,7 +7,7 @@ export type AuthResponse = {
   fullName: string;
   email: string;
   role: string;
-  isEmailVerified: boolean; // <-- ADDED
+  isEmailVerified: boolean;
 };
 
 export type BookingDto = {
