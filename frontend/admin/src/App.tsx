@@ -34,6 +34,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
 
+  // OTP States
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+
   const [catalog, setCatalog] = useState<ServiceCategoryDto[]>([]);
   const [bookings, setBookings] = useState<BookingDto[]>([]);
   const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
@@ -54,9 +58,29 @@ export default function App() {
   async function submitAuth(e: React.FormEvent) {
     e.preventDefault(); setError(null);
     try {
-      const res = mode === "login" ? await api.login({ email, password })
-        : await api.register({ fullName, email, phoneNumber: "9876543210", password, role: 1, city });
-      setToken(res.token); setSession(res); setBookings(await api.myBookings());
+      if (mode === "login") {
+        const res = await api.login({ email, password });
+        if (!res.isEmailVerified) {
+           setShowOtp(true);
+           return;
+        }
+        setToken(res.token); setSession(res); setBookings(await api.myBookings());
+      } else {
+        // For registration, just trigger the OTP screen. Don't set session yet.
+        await api.register({ fullName, email, phoneNumber: "9876543210", password, role: 1, city });
+        setShowOtp(true); 
+      }
+    } catch (err) { setError((err as Error).message); }
+  }
+
+  async function submitOtp(e: React.FormEvent) {
+    e.preventDefault(); setError(null);
+    try {
+      const res = await api.verifyOtp({ email, code: otpCode });
+      setToken(res.token); 
+      setSession(res); 
+      setShowOtp(false); 
+      setBookings(await api.myBookings());
     } catch (err) { setError((err as Error).message); }
   }
 
@@ -105,6 +129,46 @@ export default function App() {
 
   function logout() { disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setLive(null); }
 
+  // ==========================================
+  // OTP SCREEN (Rendered before Login/Register)
+  // ==========================================
+  if (!session && showOtp) {
+    return (
+      <div className="app-container">
+        <header className="app-header">
+          <div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a></div>
+        </header>
+        <main style={{ maxWidth: 400, margin: "4rem auto", textAlign: "center" }}>
+          <div className="card">
+            <h2>Verify Your Email</h2>
+            <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>
+              We sent a 6-digit code to <strong>{email}</strong>
+            </p>
+            <form onSubmit={submitOtp} style={{ display: "grid", gap: "1rem", marginTop: "2rem" }}>
+              <input 
+                value={otpCode} 
+                onChange={e => setOtpCode(e.target.value)} 
+                placeholder="123456" 
+                maxLength={6} 
+                style={{ textAlign: "center", fontSize: "2rem", letterSpacing: "5px", padding: "1rem" }} 
+                required 
+              />
+              <button type="submit" className="btn-primary" style={{ padding: "1rem" }}>Verify & Login</button>
+            </form>
+            {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
+            <p style={{ marginTop: "1.5rem", fontSize: "0.9rem", cursor: "pointer", color: "var(--primary)" }} onClick={() => setShowOtp(false)}>
+              Back to Login
+            </p>
+          </div>
+        </main>
+        <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3></div></footer>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // LOGGED OUT (Landing + Login/Register)
+  // ==========================================
   if (!session) {
     return (
       <div className="app-container">
@@ -140,6 +204,9 @@ export default function App() {
     );
   }
 
+  // ==========================================
+  // LOGGED IN (Dashboard with Map)
+  // ==========================================
   return (
     <div className="app-container">
       <header className="app-header">
@@ -150,7 +217,7 @@ export default function App() {
         
         <h2 style={{ marginBottom: "1.5rem" }}>Our Services</h2>
         
-              <div className="service-grid-full">
+        <div className="service-grid-full">
           {catalog.flatMap(c => c.services).map(s => (
             <div key={s.id} className="service-card-large">
               <img src={SERVICE_IMAGES[s.name] || DEFAULT_IMAGE} alt={s.name} />
