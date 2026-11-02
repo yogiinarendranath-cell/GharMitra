@@ -21,7 +21,9 @@ public static class DependencyInjection
         services.AddScoped<GharMitra.Application.Payments.IPaymentService, GharMitra.Infrastructure.Payments.PaymentService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IEmailService, Services.EmailService>();
+        services.AddScoped<ISmsService, Services.SmsService>();
 
         return services;
     }
 }
+

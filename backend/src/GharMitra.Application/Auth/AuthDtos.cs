@@ -11,8 +11,8 @@ public record RegisterRequest(
     string? City);
 
 public record LoginRequest(string Email, string Password);
-
 public record VerifyOtpRequest(string Email, string Code);
+public record VerifyPhoneRequest(string Email, string Code);
 
 public record AuthResponse(
     string Token,
@@ -20,5 +20,7 @@ public record AuthResponse(
     Guid UserId,
     string FullName,
     string Email,
+    string PhoneNumber,
     string Role,
-    bool IsEmailVerified);
+    bool IsEmailVerified,
+    bool IsPhoneVerified);

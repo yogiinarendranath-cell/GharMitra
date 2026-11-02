@@ -10,29 +10,25 @@ public class AuthService : IAuthService
     private readonly IApplicationDbContext _db;
     private readonly IJwtTokenGenerator _jwt;
     private readonly IEmailService _emailService;
+    private readonly ISmsService _smsService;
 
-    public AuthService(IApplicationDbContext db, IJwtTokenGenerator jwt, IEmailService emailService)
+    public AuthService(IApplicationDbContext db, IJwtTokenGenerator jwt, IEmailService emailService, ISmsService smsService)
     {
         _db = db;
         _jwt = jwt;
         _emailService = emailService;
+        _smsService = smsService;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest r, CancellationToken ct = default)
     {
         var email = r.Email.Trim().ToLowerInvariant();
-
         if (await _db.Users.AnyAsync(u => u.Email == email, ct))
             throw new InvalidOperationException("An account with this email already exists.");
 
-        if (r.Role is not (UserRole.Customer or UserRole.Professional))
-            throw new InvalidOperationException("Invalid role for self-registration.");
-
-        if (string.IsNullOrWhiteSpace(r.Password) || r.Password.Length < 8)
-            throw new InvalidOperationException("Password must be at least 8 characters.");
-
-        // Generate 6-digit OTP
-        var otp = new Random().Next(100000, 999999).ToString();
+        // Generate OTPs
+        var emailOtp = new Random().Next(100000, 999999).ToString();
+        var phoneOtp = new Random().Next(100000, 999999).ToString();
 
         var user = new User
         {
@@ -42,8 +38,11 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(r.Password),
             Role = r.Role,
             IsEmailVerified = false,
-            OtpCode = otp,
-            OtpExpiryUtc = DateTime.UtcNow.AddMinutes(10)
+            OtpCode = emailOtp,
+            OtpExpiryUtc = DateTime.UtcNow.AddMinutes(10),
+            IsPhoneVerified = false,
+            PhoneOtpCode = phoneOtp,
+            PhoneOtpExpiryUtc = DateTime.UtcNow.AddMinutes(10)
         };
 
         if (r.Role == UserRole.Customer)
@@ -54,16 +53,9 @@ public class AuthService : IAuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
 
-        // Send Email
-        try
-        {
-            await _emailService.SendOtpEmailAsync(user.Email, user.FullName, otp, ct);
-        }
-        catch (Exception ex)
-        {
-            // Log the error but don't block registration
-            Console.WriteLine($"Failed to send OTP email: {ex.Message}");
-        }
+        // Send Email & SMS
+        try { await _emailService.SendOtpEmailAsync(user.Email, user.FullName, emailOtp, ct); } catch { }
+        try { await _smsService.SendOtpSmsAsync(user.PhoneNumber, phoneOtp, ct); } catch { }
 
         return Build(user);
     }
@@ -80,6 +72,9 @@ public class AuthService : IAuthService
         if (!user.IsEmailVerified)
             throw new InvalidOperationException("Email not verified. Please check your inbox for the OTP.");
 
+        if (!user.IsPhoneVerified)
+            throw new InvalidOperationException("Phone not verified. Please check your SMS for the OTP.");
+
         return Build(user);
     }
 
@@ -89,14 +84,9 @@ public class AuthService : IAuthService
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct)
             ?? throw new InvalidOperationException("User not found.");
 
-        if (user.IsEmailVerified)
-            throw new InvalidOperationException("Email is already verified.");
-
-        if (user.OtpCode != r.Code)
-            throw new InvalidOperationException("Invalid OTP code.");
-
-        if (user.OtpExpiryUtc < DateTime.UtcNow)
-            throw new InvalidOperationException("OTP has expired. Please register again.");
+        if (user.IsEmailVerified) throw new InvalidOperationException("Email is already verified.");
+        if (user.OtpCode != r.Code) throw new InvalidOperationException("Invalid OTP code.");
+        if (user.OtpExpiryUtc < DateTime.UtcNow) throw new InvalidOperationException("OTP has expired.");
 
         user.IsEmailVerified = true;
         user.OtpCode = null;
@@ -104,13 +94,31 @@ public class AuthService : IAuthService
         user.UpdatedAtUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+        return Build(user);
+    }
 
+    public async Task<AuthResponse> VerifyPhoneAsync(VerifyPhoneRequest r, CancellationToken ct = default)
+    {
+        var email = r.Email.Trim().ToLowerInvariant();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct)
+            ?? throw new InvalidOperationException("User not found.");
+
+        if (user.IsPhoneVerified) throw new InvalidOperationException("Phone is already verified.");
+        if (user.PhoneOtpCode != r.Code) throw new InvalidOperationException("Invalid SMS OTP code.");
+        if (user.PhoneOtpExpiryUtc < DateTime.UtcNow) throw new InvalidOperationException("SMS OTP has expired.");
+
+        user.IsPhoneVerified = true;
+        user.PhoneOtpCode = null;
+        user.PhoneOtpExpiryUtc = null;
+        user.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
         return Build(user);
     }
 
     private AuthResponse Build(User user)
     {
         var (token, expires) = _jwt.GenerateToken(user);
-        return new AuthResponse(token, expires, user.Id, user.FullName, user.Email, user.Role.ToString(), user.IsEmailVerified);
+        return new AuthResponse(token, expires, user.Id, user.FullName, user.Email, user.PhoneNumber, user.Role.ToString(), user.IsEmailVerified, user.IsPhoneVerified);
     }
 }

@@ -32,4 +32,10 @@ public class AuthController : ControllerBase
         try { return Ok(await _auth.VerifyOtpAsync(request, ct)); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
+        [HttpPost("verify-phone")]
+    public async Task<ActionResult<AuthResponse>> VerifyPhone(VerifyPhoneRequest request, CancellationToken ct)
+    {
+        try { return Ok(await _auth.VerifyPhoneAsync(request, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 }
