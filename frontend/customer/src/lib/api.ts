@@ -1,4 +1,4 @@
-const BASE = "https://stopped-grew-explains-acknowledge.trycloudflare.com";
+const BASE = "https://gharmitra-api.onrender.com";
 
 export type AuthResponse = {
   token: string;
@@ -85,6 +85,7 @@ export const api = {
       body: JSON.stringify({ reason: reason ?? null }),
     }),
 };
+
 
 
 
