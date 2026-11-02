@@ -150,13 +150,20 @@ export default function App() {
         
         <h2 style={{ marginBottom: "1.5rem" }}>Our Services</h2>
         
-        <div className="service-grid-full">
+              <div className="service-grid-full">
           {catalog.flatMap(c => c.services).map(s => (
-            <div key={s.id} className="service-card-large" onClick={() => setSelectedService(s)}>
+            <div key={s.id} className="service-card-large">
               <img src={SERVICE_IMAGES[s.name] || DEFAULT_IMAGE} alt={s.name} />
               <div className="service-card-overlay">
                 <h3>{s.name}</h3>
                 <p>From ₹{s.basePrice} • {s.durationMinutes} min</p>
+                <button 
+                  className="btn-primary" 
+                  style={{ marginTop: "10px", width: "100%", padding: "0.6rem" }}
+                  onClick={() => setSelectedService(s)}
+                >
+                  Book Now
+                </button>
               </div>
             </div>
           ))}
