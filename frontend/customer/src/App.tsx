@@ -72,8 +72,9 @@ export default function App() {
     } catch (err) {
       const msg = (err as Error).message;
       setError(msg);
-      if (msg.includes("not verified")) {
-        setShowOtp(true); // Switch to OTP screen if they try to login without verifying
+      // Bulletproof matching: if the word "verif" is anywhere in the error, show OTP
+      if (msg.toLowerCase().includes("verif")) {
+        setShowOtp(true);
       }
     }
   }
