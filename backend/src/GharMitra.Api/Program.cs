@@ -24,6 +24,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddApplication();
+builder.Services.AddHttpClient();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<IBookingNotifier, BookingNotifier>();
@@ -113,3 +114,4 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+

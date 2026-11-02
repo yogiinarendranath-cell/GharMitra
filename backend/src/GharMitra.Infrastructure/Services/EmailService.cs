@@ -1,37 +1,38 @@
 using GharMitra.Application.Common.Interfaces;
-using MailKit.Net.Smtp;
-using MailKit.Security;
 using Microsoft.Extensions.Configuration;
-using MimeKit;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace GharMitra.Infrastructure.Services;
 
 public class EmailService : IEmailService
 {
     private readonly IConfiguration _config;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public EmailService(IConfiguration config)
+    public EmailService(IConfiguration config, IHttpClientFactory httpClientFactory)
     {
         _config = config;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task SendOtpEmailAsync(string toEmail, string toName, string otpCode, CancellationToken ct = default)
     {
         var emailSettings = _config.GetSection("EmailSettings");
-        var host = emailSettings["Host"] ?? "smtp.gmail.com";
-        var port = int.Parse(emailSettings["Port"] ?? "587");
+        var apiKey = emailSettings["ApiKey"] ?? throw new InvalidOperationException("Brevo API Key missing");
         var senderEmail = emailSettings["SenderEmail"] ?? throw new InvalidOperationException("SenderEmail missing");
         var senderName = emailSettings["SenderName"] ?? "GharMitra";
-        var password = emailSettings["Password"] ?? throw new InvalidOperationException("Email password missing");
 
-        var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(senderName, senderEmail));
-        message.To.Add(new MailboxAddress(toName, toEmail));
-        message.Subject = "Your GharMitra Verification Code";
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("api-key", apiKey);
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var bodyBuilder = new BodyBuilder
+        var payload = new
         {
-            HtmlBody = $@"
+            sender = new { name = senderName, email = senderEmail },
+            to = new[] { new { email = toEmail, name = toName } },
+            subject = "Your GharMitra Verification Code",
+            htmlContent = $@"
                 <h2>Welcome to GharMitra!</h2>
                 <p>Hi {toName},</p>
                 <p>Your verification code is:</p>
@@ -39,12 +40,13 @@ public class EmailService : IEmailService
                 <p>This code will expire in 10 minutes.</p>
                 <p>If you didn't request this, please ignore this email.</p>"
         };
-        message.Body = bodyBuilder.ToMessageBody();
 
-        using var client = new SmtpClient();
-        await client.ConnectAsync(host, port, SecureSocketOptions.StartTls, ct);
-        await client.AuthenticateAsync(senderEmail, password, ct);
-        await client.SendAsync(message, ct);
-        await client.DisconnectAsync(true, ct);
+        var response = await client.PostAsJsonAsync("https://api.brevo.com/v3/smtp/email", payload, ct);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(ct);
+            throw new Exception($"Brevo API Error: {response.StatusCode} - {error}");
+        }
     }
 }
