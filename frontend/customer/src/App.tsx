@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import "./App.css";
 import { api, setToken, type AuthResponse, type BookingDto, type ServiceCategoryDto, type ServiceDto } from "./lib/api";
 import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
@@ -106,7 +106,7 @@ export default function App() {
     try {
       const order = await api.payBooking(b.id);
       if (order.isMock) {
-        if (!confirm(`[MOCK MODE] Simulate successful payment of ₹${order.amount}?`)) return;
+        if (!confirm(`[MOCK MODE] Simulate successful payment of â‚¹${order.amount}?`)) return;
         await api.verifyPayment(b.id, { razorpayOrderId: order.orderId, razorpayPaymentId: `pay_mock_${Date.now()}`, razorpaySignature: "mock_signature" });
         setBookings(await api.myBookings());
       } else {
@@ -136,12 +136,12 @@ export default function App() {
   if (showOtp) {
     return (
       <div className="app-container">
-        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a></div></header>
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">ðŸ  GharMitra</a></div></header>
         <main>
           <div className="card" style={{ maxWidth: 400, margin: "4rem auto", textAlign: "center" }}>
             <h2 style={{ marginBottom: "1rem" }}>Verify Your Email</h2>
             <div style={{ background: "#D1FAE5", color: "#065F46", padding: "12px", borderRadius: "8px", marginBottom: "1.5rem", fontSize: "0.95rem", fontWeight: "500" }}>
-              ? Account created successfully! Please verify your email.
+              ✅ Account created successfully! Please verify your email.
             </div>
             <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>We sent a 6-digit code to <strong>{email}</strong></p>
             <form onSubmit={submitOtp} style={{ display: "grid", gap: "1rem" }}>
@@ -169,7 +169,7 @@ export default function App() {
   if (!session) {
     return (
       <div className="app-container">
-        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav"><button className="btn-outline" onClick={() => { setMode("login"); window.scrollTo(0, 0); }}>Sign In</button></div></div></header>
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">ðŸ  GharMitra</a><div className="header-nav"><button className="btn-outline" onClick={() => { setMode("login"); window.scrollTo(0, 0); }}>Sign In</button></div></div></header>
         <main>
           <div className="hero-main">
             <h1>Get House Help in 10 min</h1>
@@ -196,7 +196,7 @@ export default function App() {
             {error && <p style={{ color: "var(--danger)", marginTop: "1rem", textAlign: "center" }}>{error}</p>}
           </div>
         </main>
-        <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div></div></footer>
+        <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">Â© 2026 GharMitra. All rights reserved.</div></div></footer>
       </div>
     );
   }
@@ -204,10 +204,10 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav"><span className="user-greeting">Hi, {session.fullName}</span><button className="btn-outline" onClick={logout}>Sign out</button></div></div>
+        <div className="header-inner"><a href="#" className="logo">ðŸ  GharMitra</a><div className="header-nav"><span className="user-greeting">Hi, {session.fullName}</span><button className="btn-outline" onClick={logout}>Sign out</button></div></div>
       </header>
       <main>
-        {live && <div className="live-bar">📡 Live: {live}</div>}
+        {live && <div className="live-bar">ðŸ“¡ Live: {live}</div>}
         
         <h2 style={{ marginBottom: "1.5rem" }}>Our Services</h2>
         
@@ -217,7 +217,7 @@ export default function App() {
               <img src={SERVICE_IMAGES[s.name] || DEFAULT_IMAGE} alt={s.name} />
               <div className="service-card-overlay">
                 <h3>{s.name}</h3>
-                <p>From ₹{s.basePrice} • {s.durationMinutes} min</p>
+                <p>From â‚¹{s.basePrice} â€¢ {s.durationMinutes} min</p>
                 <button 
                   className="btn-primary" 
                   style={{ marginTop: "10px", width: "100%", padding: "0.6rem" }}
@@ -237,7 +237,7 @@ export default function App() {
             <div key={b.id} className="booking-item">
               <div className="booking-info">
                 <h4>{b.serviceName}</h4>
-                <div className="booking-meta">₹{b.totalAmount} • {new Date(b.scheduledStartUtc).toLocaleString()}</div>
+                <div className="booking-meta">â‚¹{b.totalAmount} â€¢ {new Date(b.scheduledStartUtc).toLocaleString()}</div>
                 <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
                   <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
                   <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
@@ -274,12 +274,12 @@ export default function App() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
               <h2 style={{ margin: 0 }}>Book Service</h2>
-              <button style={{ background: "transparent", fontSize: "1.5rem", color: "var(--text-muted)", padding: 0 }} onClick={() => setSelectedService(null)}>×</button>
+              <button style={{ background: "transparent", fontSize: "1.5rem", color: "var(--text-muted)", padding: 0 }} onClick={() => setSelectedService(null)}>Ã—</button>
             </div>
             <form onSubmit={submitBooking} style={{ display: "grid", gap: "1rem" }}>
               <div style={{ background: "#F9FAFB", padding: "1rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
                 <strong>{selectedService.name}</strong><br/>
-                <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>₹{selectedService.basePrice} • {selectedService.durationMinutes} mins</span>
+                <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>â‚¹{selectedService.basePrice} â€¢ {selectedService.durationMinutes} mins</span>
               </div>
               <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>Address</label><input value={address} onChange={e => setAddress(e.target.value)} required /></div>
               <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>When?</label><input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} required /></div>
@@ -289,7 +289,7 @@ export default function App() {
         </div>
       )}
 
-      <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div></div></footer>
+      <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">Â© 2026 GharMitra. All rights reserved.</div></div></footer>
     </div>
   );
 }
