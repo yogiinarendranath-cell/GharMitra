@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IServiceCatalog, ServiceCatalog>();
         services.AddScoped<IBookingService, BookingService>();
+        services.AddScoped<GharMitra.Application.Analytics.IAnalyticsService, GharMitra.Application.Analytics.AnalyticsService>();
         services.AddScoped<IProfessionalService, ProfessionalService>();
         return services;
     }

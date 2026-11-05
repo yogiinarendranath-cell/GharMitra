@@ -48,4 +48,12 @@ public class AdminController : ControllerBase
         }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
+
+    [HttpGet("analytics")]
+    public async Task<ActionResult<GharMitra.Application.Analytics.AnalyticsDto>> Analytics(
+        [FromServices] GharMitra.Application.Analytics.IAnalyticsService analytics,
+        CancellationToken ct)
+    {
+        return Ok(await analytics.GetAnalyticsAsync(ct));
+    }
 }
