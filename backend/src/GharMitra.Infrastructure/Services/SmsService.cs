@@ -20,19 +20,29 @@ public class SmsService : ISmsService
 
     public Task SendOtpSmsAsync(string phoneNumber, string otpCode, CancellationToken ct = default)
     {
+        var devMode = _config.GetValue<bool>("Auth:DevMode");
+
+        if (devMode)
+        {
+            _logger.LogWarning("════════════════════════════════════════════");
+            _logger.LogWarning("📱 DEV MODE SMS OTP");
+            _logger.LogWarning($"   To: {phoneNumber}");
+            _logger.LogWarning($"   CODE: {otpCode}");
+            _logger.LogWarning("════════════════════════════════════════════");
+            return Task.CompletedTask;
+        }
+
         var accountSid = _config["Twilio:AccountSid"];
         var authToken = _config["Twilio:AuthToken"];
         var fromNumber = _config["Twilio:FromNumber"];
 
-        // MOCK MODE FALLBACK
-        if (string.IsNullOrWhiteSpace(accountSid) || accountSid.StartsWith("AC_your"))
+        if (string.IsNullOrWhiteSpace(accountSid))
         {
-            _logger.LogWarning($"[MOCK SMS] To: {phoneNumber} | Code: {otpCode}");
+            _logger.LogWarning($"[NO SMS CONFIGURED] To: {phoneNumber} | Code: {otpCode}");
             return Task.CompletedTask;
         }
 
         TwilioClient.Init(accountSid, authToken);
-
         var message = MessageResource.Create(
             body: $"Your GharMitra verification code is: {otpCode}",
             from: new PhoneNumber(fromNumber),
