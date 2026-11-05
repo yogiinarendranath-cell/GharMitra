@@ -10,6 +10,18 @@ public record AssignmentDto(
     string ServiceName, string CustomerName, string CustomerPhone,
     string AddressLine, string City, string? Pincode, string? Notes,
     DateTime ScheduledStartUtc, int DurationMinutes, decimal TotalAmount,
-    string BookingStatus, DateTime AssignedAtUtc, DateTime? AcceptedAtUtc);
+    string BookingStatus, DateTime AssignedAtUtc,
+    DateTime? AcceptedAtUtc, DateTime? StartedAtUtc, DateTime? CompletedAtUtc);
 
 public record VerifyProfessionalRequest(string? Notes);
+
+public record EarningsDto(
+    decimal TotalEarnings,
+    int CompletedJobs,
+    decimal ThisMonthEarnings,
+    int ThisMonthJobs,
+    List<DailyEarningDto> Last7Days);
+
+public record DailyEarningDto(DateTime Date, decimal Amount, int Jobs);
+
+public record AvailabilityRequest(bool IsAvailable);

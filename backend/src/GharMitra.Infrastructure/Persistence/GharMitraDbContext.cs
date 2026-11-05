@@ -93,6 +93,8 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
         b.Entity<BookingAssignment>(e =>
         {
             e.HasIndex(x => x.BookingId).IsUnique();
+            e.Property(x => x.StartedAtUtc);
+            e.Property(x => x.CompletedAtUtc);
             e.HasOne(x => x.Booking).WithOne(x => x.Assignment)
                 .HasForeignKey<BookingAssignment>(x => x.BookingId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Professional).WithMany(x => x.Assignments)

@@ -134,6 +134,9 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ProfessionalId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 

@@ -41,6 +41,38 @@ public class PartnerController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
+    [HttpPost("assignments/{id:guid}/start")]
+    public async Task<ActionResult<AssignmentDto>> Start(Guid id, CancellationToken ct)
+    {
+        try { return Ok(await _pros.StartJobAsync(CurrentUserId, id, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("assignments/{id:guid}/complete")]
+    public async Task<ActionResult<AssignmentDto>> Complete(Guid id, CancellationToken ct)
+    {
+        try { return Ok(await _pros.CompleteJobAsync(CurrentUserId, id, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpGet("earnings")]
+    public async Task<ActionResult<EarningsDto>> Earnings(CancellationToken ct)
+    {
+        try { return Ok(await _pros.GetEarningsAsync(CurrentUserId, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("availability")]
+    public async Task<IActionResult> ToggleAvailability([FromBody] AvailabilityRequest request, CancellationToken ct)
+    {
+        try
+        {
+            await _pros.ToggleAvailabilityAsync(CurrentUserId, request.IsAvailable, ct);
+            return Ok(new { message = "Availability updated." });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
     public record LocationUpdateRequest(double Latitude, double Longitude);
 
     [HttpPost("location")]
@@ -53,7 +85,6 @@ public class PartnerController : ControllerBase
         pro.Longitude = request.Longitude;
         pro.LastLocationUpdateUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
-
         return Ok(new { message = "Location updated" });
     }
 }

@@ -8,7 +8,9 @@ public class BookingAssignment : BaseEntity
     public Booking Booking { get; set; } = null!;
     public Guid ProfessionalId { get; set; }
     public Professional Professional { get; set; } = null!;
+
     public DateTime AssignedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? AcceptedAtUtc { get; set; }
+    public DateTime? StartedAtUtc { get; set; }
     public DateTime? CompletedAtUtc { get; set; }
 }
