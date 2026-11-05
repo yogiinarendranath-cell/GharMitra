@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GharMitra.Application.Bookings;
 using GharMitra.Application.Payments;
+using GharMitra.Application.Reviews;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +14,13 @@ public class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookings;
     private readonly IPaymentService _payments;
+    private readonly IReviewService _reviews;
 
-    public BookingsController(IBookingService bookings, IPaymentService payments)
+    public BookingsController(IBookingService bookings, IPaymentService payments, IReviewService reviews)
     {
         _bookings = bookings;
         _payments = payments;
+        _reviews = reviews;
     }
 
     private Guid CurrentUserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -50,8 +53,8 @@ public class BookingsController : ControllerBase
     [HttpPost("{id:guid}/verify-payment")]
     public async Task<IActionResult> VerifyPayment(Guid id, VerifyPaymentRequest request, CancellationToken ct)
     {
-        try 
-        { 
+        try
+        {
             await _payments.VerifyPaymentAsync(CurrentUserId, id, request, ct);
             return Ok(new { message = "Payment verified successfully." });
         }
@@ -59,20 +62,16 @@ public class BookingsController : ControllerBase
     }
 
     [HttpGet("{id:guid}/can-review")]
-    public async Task<ActionResult<{ canReview: bool }>> CanReview(Guid id,
-        [FromServices] GharMitra.Application.Reviews.IReviewService reviews, CancellationToken ct)
+    public async Task<IActionResult> CanReview(Guid id, CancellationToken ct)
     {
-        return Ok(new { canReview = await reviews.CanReviewAsync(CurrentUserId, id, ct) });
+        var canReview = await _reviews.CanReviewAsync(CurrentUserId, id, ct);
+        return Ok(new { canReview });
     }
 
     [HttpPost("{id:guid}/reviews")]
-    public async Task<ActionResult<GharMitra.Application.Reviews.ReviewDto>> SubmitReview(
-        Guid id,
-        GharMitra.Application.Reviews.CreateReviewRequest request,
-        [FromServices] GharMitra.Application.Reviews.IReviewService reviews,
-        CancellationToken ct)
+    public async Task<ActionResult<ReviewDto>> SubmitReview(Guid id, CreateReviewRequest request, CancellationToken ct)
     {
-        try { return Ok(await reviews.SubmitReviewAsync(CurrentUserId, id, request, ct)); }
+        try { return Ok(await _reviews.SubmitReviewAsync(CurrentUserId, id, request, ct)); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 }
