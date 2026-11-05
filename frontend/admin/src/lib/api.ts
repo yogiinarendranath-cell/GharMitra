@@ -33,6 +33,34 @@ export type ProfessionalDto = {
   rating: number;
 };
 
+export type KpiDto = {
+  totalRevenue: number;
+  totalBookings: number;
+  paidBookings: number;
+  pendingBookings: number;
+  assignedBookings: number;
+  acceptedBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
+  cancellationRate: number;
+  totalCustomers: number;
+  totalProfessionals: number;
+  activeProfessionals: number;
+};
+
+export type DailyRevenueDto = { date: string; revenue: number; bookings: number };
+export type TopProfessionalDto = { id: string; fullName: string; city: string; totalJobs: number; totalRevenue: number; rating: number; isVerified: boolean };
+export type TopServiceDto = { serviceName: string; bookingCount: number; revenue: number };
+export type RecentBookingDto = { bookingNumber: string; serviceName: string; customerName: string; professionalName: string | null; amount: number; status: string; paymentStatus: string; createdAtUtc: string };
+
+export type AnalyticsDto = {
+  kpis: KpiDto;
+  last7DaysRevenue: DailyRevenueDto[];
+  topProfessionals: TopProfessionalDto[];
+  topServices: TopServiceDto[];
+  recentBookings: RecentBookingDto[];
+};
+
 export const tokenKey = "gm_admin_token";
 
 export function setToken(t: string | null) {
@@ -67,6 +95,7 @@ export const adminApi = {
     request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
   bookings: () => request<BookingDto[]>("/api/admin/bookings"),
   professionals: () => request<ProfessionalDto[]>("/api/admin/professionals"),
+  analytics: () => request<AnalyticsDto>("/api/admin/analytics"),
   assign: (bookingId: string, professionalId: string) =>
     request<void>(`/api/admin/bookings/${bookingId}/assign`, {
       method: "POST",

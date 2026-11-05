@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { adminApi, setToken, type AuthResponse, type BookingDto, type ProfessionalDto } from "./lib/api";
+import { adminApi, setToken, type AuthResponse, type BookingDto, type ProfessionalDto, type AnalyticsDto } from "./lib/api";
 import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
+
+type Tab = "analytics" | "bookings" | "professionals";
 
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
-  const [tab, setTab] = useState<"bookings" | "professionals">("bookings");
+  const [tab, setTab] = useState<Tab>("analytics");
   const [bookings, setBookings] = useState<BookingDto[]>([]);
   const [pros, setPros] = useState<ProfessionalDto[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
   const [email, setEmail] = useState("admin@gharmitra.local");
@@ -16,6 +19,7 @@ export default function App() {
   async function refreshAll() {
     setBookings(await adminApi.bookings());
     setPros(await adminApi.professionals());
+    setAnalytics(await adminApi.analytics());
   }
 
   useEffect(() => {
@@ -49,7 +53,7 @@ export default function App() {
   }
 
   function logout() {
-    disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setPros([]); setLive(null);
+    disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setPros([]); setAnalytics(null); setLive(null);
   }
 
   if (!session) {
@@ -73,6 +77,7 @@ export default function App() {
   }
 
   const verifiedPros = pros.filter(p => p.isVerified && p.isAvailable);
+  const kpis = analytics?.kpis;
 
   return (
     <div className="app-container">
@@ -90,9 +95,185 @@ export default function App() {
         {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>⚠️ {error}</div>}
 
         <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
+          <button className={tab === "analytics" ? "btn-primary" : "btn-outline"} onClick={() => setTab("analytics")}>📊 Analytics</button>
           <button className={tab === "bookings" ? "btn-primary" : "btn-outline"} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
           <button className={tab === "professionals" ? "btn-primary" : "btn-outline"} onClick={() => setTab("professionals")}>Professionals ({pros.length})</button>
         </div>
+
+        {tab === "analytics" && analytics && kpis && (
+          <>
+            {/* KPI Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
+              <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>Total Revenue</div>
+                <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--success)" }}>₹{kpis.totalRevenue.toLocaleString()}</div>
+              </div>
+              <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>Total Bookings</div>
+                <div style={{ fontSize: "2rem", fontWeight: 700 }}>{kpis.totalBookings}</div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>{kpis.paidBookings} paid</div>
+              </div>
+              <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>Customers</div>
+                <div style={{ fontSize: "2rem", fontWeight: 700 }}>{kpis.totalCustomers}</div>
+              </div>
+              <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>Professionals</div>
+                <div style={{ fontSize: "2rem", fontWeight: 700 }}>{kpis.totalProfessionals}</div>
+                <div style={{ fontSize: "0.8rem", color: "var(--success)", marginTop: "4px" }}>{kpis.activeProfessionals} active</div>
+              </div>
+              <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>Cancellation Rate</div>
+                <div style={{ fontSize: "2rem", fontWeight: 700, color: kpis.cancellationRate > 20 ? "var(--danger)" : "var(--text-main)" }}>{kpis.cancellationRate}%</div>
+              </div>
+            </div>
+
+            {/* Booking Status Breakdown */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
+              <div className="card" style={{ padding: "1rem", textAlign: "center" }}>
+                <div style={{ color: "var(--warning)", fontWeight: 700, fontSize: "1.5rem" }}>{kpis.pendingBookings}</div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Pending</div>
+              </div>
+              <div className="card" style={{ padding: "1rem", textAlign: "center" }}>
+                <div style={{ color: "#3B82F6", fontWeight: 700, fontSize: "1.5rem" }}>{kpis.assignedBookings}</div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Assigned</div>
+              </div>
+              <div className="card" style={{ padding: "1rem", textAlign: "center" }}>
+                <div style={{ color: "var(--success)", fontWeight: 700, fontSize: "1.5rem" }}>{kpis.acceptedBookings}</div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Accepted</div>
+              </div>
+              <div className="card" style={{ padding: "1rem", textAlign: "center" }}>
+                <div style={{ color: "var(--danger)", fontWeight: 700, fontSize: "1.5rem" }}>{kpis.cancelledBookings}</div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Cancelled</div>
+              </div>
+            </div>
+
+            {/* Last 7 Days Revenue Chart (Simple Bar Chart) */}
+            <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
+              <h3 style={{ marginBottom: "1rem" }}>Last 7 Days Revenue</h3>
+              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: "150px", gap: "8px" }}>
+                {analytics.last7DaysRevenue.map((day) => {
+                  const maxRevenue = Math.max(...analytics.last7DaysRevenue.map(d => d.revenue), 1);
+                  const height = (day.revenue / maxRevenue) * 100;
+                  return (
+                    <div key={day.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                      <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginBottom: "4px" }}>₹{day.revenue}</div>
+                      <div style={{
+                        width: "100%",
+                        height: `${Math.max(height, 3)}%`,
+                        background: day.revenue > 0 ? "var(--primary)" : "var(--border)",
+                        borderRadius: "4px 4px 0 0",
+                        transition: "height 0.3s ease"
+                      }} />
+                      <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                        {new Date(day.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Top Professionals */}
+            <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
+              <h3 style={{ marginBottom: "1rem" }}>🏆 Top Professionals</h3>
+              {analytics.topProfessionals.length === 0 ? (
+                <p style={{ color: "var(--text-muted)" }}>No professional data yet.</p>
+              ) : (
+                <table width="100%" cellPadding={6} style={{ borderCollapse: "collapse" }}>
+                  <thead style={{ background: "var(--bg)" }}>
+                    <tr>
+                      <th align="left">#</th>
+                      <th align="left">Name</th>
+                      <th align="left">City</th>
+                      <th align="right">Jobs</th>
+                      <th align="right">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.topProfessionals.map((p, i) => (
+                      <tr key={p.id} style={{ borderTop: "1px solid var(--border)" }}>
+                        <td>{i + 1}</td>
+                        <td><strong>{p.fullName}</strong> {p.isVerified && "✅"}</td>
+                        <td>{p.city}</td>
+                        <td align="right">{p.totalJobs}</td>
+                        <td align="right" style={{ color: "var(--success)", fontWeight: 600 }}>₹{p.totalRevenue}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Top Services */}
+            <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
+              <h3 style={{ marginBottom: "1rem" }}>📈 Top Services</h3>
+              {analytics.topServices.length === 0 ? (
+                <p style={{ color: "var(--text-muted)" }}>No service data yet.</p>
+              ) : (
+                <table width="100%" cellPadding={6} style={{ borderCollapse: "collapse" }}>
+                  <thead style={{ background: "var(--bg)" }}>
+                    <tr>
+                      <th align="left">Service</th>
+                      <th align="right">Bookings</th>
+                      <th align="right">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.topServices.map((s, i) => (
+                      <tr key={i} style={{ borderTop: "1px solid var(--border)" }}>
+                        <td><strong>{s.serviceName}</strong></td>
+                        <td align="right">{s.bookingCount}</td>
+                        <td align="right" style={{ color: "var(--success)", fontWeight: 600 }}>₹{s.revenue}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Recent Bookings */}
+            <div className="card" style={{ padding: "1.5rem" }}>
+              <h3 style={{ marginBottom: "1rem" }}>🕒 Recent Bookings</h3>
+              {analytics.recentBookings.length === 0 ? (
+                <p style={{ color: "var(--text-muted)" }}>No bookings yet.</p>
+              ) : (
+                <table width="100%" cellPadding={6} style={{ borderCollapse: "collapse" }}>
+                  <thead style={{ background: "var(--bg)" }}>
+                    <tr>
+                      <th align="left">#</th>
+                      <th align="left">Service</th>
+                      <th align="left">Customer</th>
+                      <th align="left">Professional</th>
+                      <th align="right">Amount</th>
+                      <th align="left">Status</th>
+                      <th align="left">Payment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.recentBookings.map((b, i) => (
+                      <tr key={i} style={{ borderTop: "1px solid var(--border)" }}>
+                        <td>{b.bookingNumber}</td>
+                        <td>{b.serviceName}</td>
+                        <td>{b.customerName}</td>
+                        <td>{b.professionalName ?? "—"}</td>
+                        <td align="right">₹{b.amount}</td>
+                        <td><span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span></td>
+                        <td><span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        )}
+
+        {tab === "analytics" && !analytics && (
+          <div className="card" style={{ padding: "3rem", textAlign: "center" }}>
+            <p style={{ color: "var(--text-muted)" }}>Loading analytics...</p>
+          </div>
+        )}
 
         {tab === "bookings" && (
           <div className="table-container">
@@ -150,6 +331,7 @@ export default function App() {
           </div>
         )}
       </main>
+
       <footer className="app-footer">
         <div className="footer-inner">
           <h3>GharMitra Admin</h3>
