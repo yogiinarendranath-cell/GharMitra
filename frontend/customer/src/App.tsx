@@ -63,18 +63,15 @@ export default function App() {
         const res = await api.login({ email, password });
         setToken(res.token); setSession(res); setBookings(await api.myBookings());
       } else {
-        await api.register({ fullName, email, phoneNumber, password, role: 1, city });
-        setError(null);
-        setShowOtp(true);
+        const res = await api.register({ fullName, email, phoneNumber, password, role: 1, city });
+        setToken(res.token);
+        setSession(res);
+        setBookings(await api.myBookings());
       }
     } catch (err) {
       const msg = (err as Error).message;
       setError(msg);
-      const lower = msg.toLowerCase();
-      if (lower.includes("not verified") || lower.includes("verif")) {
-        if (lower.includes("phone")) setShowPhoneOtp(true);
-        else setShowOtp(true);
-      }
+      
     }
   }
 
