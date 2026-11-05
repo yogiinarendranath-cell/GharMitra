@@ -2,6 +2,7 @@ using GharMitra.Application.Common.Interfaces;
 using GharMitra.Domain.Entities;
 using GharMitra.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GharMitra.Application.Auth;
 
@@ -11,14 +12,18 @@ public class AuthService : IAuthService
     private readonly IJwtTokenGenerator _jwt;
     private readonly IEmailService _emailService;
     private readonly ISmsService _smsService;
+    private readonly IConfiguration _config;
 
-    public AuthService(IApplicationDbContext db, IJwtTokenGenerator jwt, IEmailService emailService, ISmsService smsService)
+    public AuthService(IApplicationDbContext db, IJwtTokenGenerator jwt, IEmailService emailService, ISmsService smsService, IConfiguration config)
     {
         _db = db;
         _jwt = jwt;
         _emailService = emailService;
         _smsService = smsService;
+        _config = config;
     }
+
+    private bool SkipVerification => _config.GetValue<bool>("Auth:SkipVerification");
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest r, CancellationToken ct = default)
     {
@@ -26,9 +31,9 @@ public class AuthService : IAuthService
         if (await _db.Users.AnyAsync(u => u.Email == email, ct))
             throw new InvalidOperationException("An account with this email already exists.");
 
-        // Generate OTPs
         var emailOtp = new Random().Next(100000, 999999).ToString();
         var phoneOtp = new Random().Next(100000, 999999).ToString();
+        var skip = SkipVerification;
 
         var user = new User
         {
@@ -37,12 +42,12 @@ public class AuthService : IAuthService
             PhoneNumber = r.PhoneNumber.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(r.Password),
             Role = r.Role,
-            IsEmailVerified = false,
-            OtpCode = emailOtp,
-            OtpExpiryUtc = DateTime.UtcNow.AddMinutes(10),
-            IsPhoneVerified = false,
-            PhoneOtpCode = phoneOtp,
-            PhoneOtpExpiryUtc = DateTime.UtcNow.AddMinutes(10)
+            IsEmailVerified = skip,
+            OtpCode = skip ? null : emailOtp,
+            OtpExpiryUtc = skip ? null : DateTime.UtcNow.AddMinutes(10),
+            IsPhoneVerified = skip,
+            PhoneOtpCode = skip ? null : phoneOtp,
+            PhoneOtpExpiryUtc = skip ? null : DateTime.UtcNow.AddMinutes(10)
         };
 
         if (r.Role == UserRole.Customer)
@@ -53,9 +58,11 @@ public class AuthService : IAuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
 
-        // Send Email & SMS
-        try { await _emailService.SendOtpEmailAsync(user.Email, user.FullName, emailOtp, ct); } catch { }
-        try { await _smsService.SendOtpSmsAsync(user.PhoneNumber, phoneOtp, ct); } catch { }
+        if (!skip)
+        {
+            try { await _emailService.SendOtpEmailAsync(user.Email, user.FullName, emailOtp, ct); } catch { }
+            try { await _smsService.SendOtpSmsAsync(user.PhoneNumber, phoneOtp, ct); } catch { }
+        }
 
         return Build(user);
     }
@@ -69,11 +76,13 @@ public class AuthService : IAuthService
         if (!BCrypt.Net.BCrypt.Verify(r.Password, user.PasswordHash))
             throw new InvalidOperationException("Invalid email or password.");
 
-        if (!user.IsEmailVerified)
-            throw new InvalidOperationException("Email not verified. Please check your inbox for the OTP.");
-
-        if (!user.IsPhoneVerified)
-            throw new InvalidOperationException("Phone not verified. Please check your SMS for the OTP.");
+        if (!SkipVerification)
+        {
+            if (!user.IsEmailVerified)
+                throw new InvalidOperationException("Email not verified. Please check your inbox for the OTP.");
+            if (!user.IsPhoneVerified)
+                throw new InvalidOperationException("Phone not verified. Please check your SMS for the OTP.");
+        }
 
         return Build(user);
     }
@@ -92,7 +101,6 @@ public class AuthService : IAuthService
         user.OtpCode = null;
         user.OtpExpiryUtc = null;
         user.UpdatedAtUtc = DateTime.UtcNow;
-
         await _db.SaveChangesAsync(ct);
         return Build(user);
     }
@@ -111,7 +119,6 @@ public class AuthService : IAuthService
         user.PhoneOtpCode = null;
         user.PhoneOtpExpiryUtc = null;
         user.UpdatedAtUtc = DateTime.UtcNow;
-
         await _db.SaveChangesAsync(ct);
         return Build(user);
     }
