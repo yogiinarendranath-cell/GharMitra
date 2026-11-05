@@ -49,13 +49,28 @@ export default function App() {
     return `${future.getFullYear()}-${pad(future.getMonth() + 1)}-${pad(future.getDate())}T${pad(future.getHours())}:${pad(future.getMinutes())}`;
   });
 
-  useEffect(() => { api.services().then(setCatalog).catch(e => setError(e.message)); }, []);
+  useEffect(() => {
+    let retries = 0;
+    const load = () => {
+      api.services()
+        .then(setCatalog)
+        .catch(e => {
+          if (retries < 3) {
+            retries++;
+            setTimeout(load, 2000);
+          } else {
+            setError(`Failed to load services: ${e.message}`);
+          }
+        });
+    };
+    load();
+  }, []);
 
   useEffect(() => {
     if (!session) return;
     connectBookingHub((method: string) => {
       setLive(`${method.replace('Booking', '')} update received`);
-      api.myBookings().then(setBookings).catch(console.error);
+      api.myBookings().then(setBookings).catch(e => console.error("Bookings load failed:", e.message));
     });
     return () => disconnectBookingHub();
   }, [session]);
@@ -227,7 +242,26 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav"><span className="user-greeting">Hi, {session.fullName}</span><button className="btn-outline" onClick={logout}>Sign out</button></div></div>
+        <div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{
+              width: "40px", height: "40px", borderRadius: "50%",
+              background: "var(--primary)", color: "white",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 700, fontSize: "1.1rem"
+            }}>
+              {session.fullName.charAt(0).toUpperCase()}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+              <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{session.fullName}</span>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                {session.email} � <span style={{
+                  fontWeight: 600,
+                  color: "var(--primary)"
+                }}>{session.role}</span>
+              </span>
+            </div>
+            <button className="btn-outline" onClick={logout}>Sign out</button>
+          </div></div>
       </header>
       <main>
         {live && <div className="live-bar">📡 Live: {live}</div>}
