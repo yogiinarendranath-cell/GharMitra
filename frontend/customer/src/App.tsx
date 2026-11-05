@@ -37,6 +37,9 @@ export default function App() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [showPhoneOtp, setShowPhoneOtp] = useState(false);
+  const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
   const [phoneOtpCode, setPhoneOtpCode] = useState("");
 
   const [catalog, setCatalog] = useState<ServiceCategoryDto[]>([]);
@@ -150,6 +153,19 @@ export default function App() {
     if (!confirm(`Cancel booking ${b.bookingNumber}?`)) return;
     try { await api.cancelBooking(b.id, "Customer cancelled"); setBookings(await api.myBookings()); }
     catch (err) { setError((err as Error).message); }
+  }
+
+  async function submitReview(e: React.FormEvent) {
+    e.preventDefault();
+    if (!reviewBookingId) return;
+    setError(null);
+    try {
+      await api.submitReview(reviewBookingId, { rating: reviewRating, comment: reviewComment || undefined });
+      setReviewBookingId(null);
+      setReviewComment("");
+      setReviewRating(5);
+      alert("Thank you! Your review has been submitted.");
+    } catch (err) { setError((err as Error).message); }
   }
 
   function logout() { disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setLive(null); setShowOtp(false); setShowPhoneOtp(false); }
@@ -311,6 +327,9 @@ export default function App() {
                 {b.paymentStatus === "Unpaid" && b.status !== "Cancelled" && (
                   <button onClick={() => handlePay(b)} className="btn-primary btn-sm">Pay Now</button>
                 )}
+                {b.status === "Completed" && (
+                  <button onClick={() => setReviewBookingId(b.id)} className="btn-primary btn-sm">? Rate Job</button>
+                )}
                 {!["Completed", "Cancelled"].includes(b.status) && (
                   <button onClick={() => cancel(b)} className="btn-danger btn-sm">Cancel</button>
                 )}
@@ -319,6 +338,52 @@ export default function App() {
           ))}
         </div>
       </main>
+      {reviewBookingId && (
+        <div className="modal-backdrop" onClick={() => setReviewBookingId(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2 style={{ marginBottom: "0.5rem" }}>Rate Your Experience</h2>
+            <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+              How did we do? Your feedback helps other customers.
+            </p>
+            <form onSubmit={submitReview} style={{ display: "grid", gap: "1rem" }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", fontSize: "2.5rem" }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    style={{
+                      background: "transparent",
+                      fontSize: "2.5rem",
+                      padding: "0.25rem",
+                      cursor: "pointer",
+                      color: star <= reviewRating ? "#F59E0B" : "#D1D5DB"
+                    }}
+                  >
+                    ?
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={reviewComment}
+                onChange={e => setReviewComment(e.target.value)}
+                placeholder="Optional: share what went well or what could be better..."
+                rows={4}
+                style={{ padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border)", fontFamily: "inherit", fontSize: "0.95rem", resize: "vertical" }}
+              />
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button type="button" onClick={() => setReviewBookingId(null)} className="btn-outline" style={{ flex: 1, padding: "0.75rem" }}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" style={{ flex: 2, padding: "0.75rem" }}>
+                  Submit Review
+                </button>
+              </div>
+            </form>
+            {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
+          </div>
+        </div>
+      )}
       {selectedService && (
         <div className="modal-backdrop" onClick={() => setSelectedService(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>

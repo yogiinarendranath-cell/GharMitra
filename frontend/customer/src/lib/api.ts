@@ -73,6 +73,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+export type ReviewDto = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  customerName: string;
+  professionalName: string | null;
+  serviceName: string;
+  createdAtUtc: string;
+};
+
 export const api = {
   register: (body: unknown) =>
     request<AuthResponse>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
@@ -92,6 +102,9 @@ export const api = {
       body: JSON.stringify({ reason: reason ?? null }),
     }),
   payBooking: (id: string) => request<any>(`/api/bookings/${id}/pay`, { method: "POST" }),
+  canReview: (id: string) => request<{ canReview: boolean }>(`/api/bookings/${id}/can-review`),
+  submitReview: (id: string, body: { rating: number; comment?: string }) =>
+    request<ReviewDto>(`/api/bookings/${id}/reviews`, { method: "POST", body: JSON.stringify(body) }),
   verifyPayment: (id: string, data: any) =>
     request<any>(`/api/bookings/${id}/verify-payment`, {
       method: "POST",
