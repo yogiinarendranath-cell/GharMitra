@@ -43,7 +43,11 @@ export default function App() {
   const [bookings, setBookings] = useState<BookingDto[]>([]);
   const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
   const [address, setAddress] = useState("Flat 101, Baner");
-  const [scheduledAt, setScheduledAt] = useState(() => new Date(Date.now() + 3600_000).toISOString().slice(0, 16));
+  const [scheduledAt, setScheduledAt] = useState(() => {
+    const future = new Date(Date.now() + 2 * 3600_000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${future.getFullYear()}-${pad(future.getMonth() + 1)}-${pad(future.getDate())}T${pad(future.getHours())}:${pad(future.getMinutes())}`;
+  });
 
   useEffect(() => { api.services().then(setCatalog).catch(e => setError(e.message)); }, []);
 
@@ -235,7 +239,14 @@ export default function App() {
               <div className="service-card-overlay">
                 <h3>{s.name}</h3>
                 <p>From ₹{s.basePrice} • {s.durationMinutes} min</p>
-                <button className="btn-primary" style={{ marginTop: "10px", width: "100%", padding: "0.6rem" }} onClick={() => setSelectedService(s)}>Book Now</button>
+                <button className="btn-primary" style={{ marginTop: "10px", width: "100%", padding: "0.6rem" }} onClick={() => {
+                  setSelectedService(s);
+                  // Always suggest a time 2 hours in the future
+                  const future = new Date(Date.now() + 2 * 3600_000);
+                  const pad = (n: number) => String(n).padStart(2, "0");
+                  const local = `${future.getFullYear()}-${pad(future.getMonth() + 1)}-${pad(future.getDate())}T${pad(future.getHours())}:${pad(future.getMinutes())}`;
+                  setScheduledAt(local);
+                }}>Book Now</button>
               </div>
             </div>
           ))}
