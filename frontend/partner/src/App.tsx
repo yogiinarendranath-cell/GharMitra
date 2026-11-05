@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 import { partnerApi, setToken, type AuthResponse, type Profile, type Assignment, type Earnings } from "./lib/api";
 
