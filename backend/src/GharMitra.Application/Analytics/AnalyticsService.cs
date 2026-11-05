@@ -13,6 +13,7 @@ public class AnalyticsService : IAnalyticsService
     {
         var bookings = await _db.Bookings
             .Include(b => b.Customer).ThenInclude(c => c.User)
+            .Include(b => b.Service)
             .Include(b => b.Assignment).ThenInclude(a => a!.Professional).ThenInclude(p => p.User)
             .ToListAsync(ct);
 
@@ -65,14 +66,14 @@ public class AnalyticsService : IAnalyticsService
                 bookings.Count(b => b.CreatedAtUtc.Date == day)))
             .ToList();
 
-        // Top professionals
+        // Top professionals — defensive against null Assignment or Professional
         var topProfessionals = bookings
-            .Where(b => b.Assignment != null && b.PaymentStatus == PaymentStatus.Paid)
+            .Where(b => b.Assignment?.Professional != null && b.PaymentStatus == PaymentStatus.Paid)
             .GroupBy(b => b.Assignment!.Professional)
             .Select(g => new TopProfessionalDto(
                 g.Key.Id,
-                g.Key.User.FullName,
-                g.Key.City,
+                g.Key.User?.FullName ?? "Unknown",
+                g.Key.City ?? "Unknown",
                 g.Count(),
                 g.Sum(b => b.TotalAmount),
                 g.Key.Rating,
@@ -81,8 +82,9 @@ public class AnalyticsService : IAnalyticsService
             .Take(5)
             .ToList();
 
-        // Top services
+        // Top services — defensive against null Service
         var topServices = bookings
+            .Where(b => b.Service != null)
             .GroupBy(b => b.Service.Name)
             .Select(g => new TopServiceDto(
                 g.Key,
@@ -92,15 +94,15 @@ public class AnalyticsService : IAnalyticsService
             .Take(5)
             .ToList();
 
-        // Recent bookings (last 10)
+        // Recent bookings — defensive against all nulls
         var recentBookings = bookings
             .OrderByDescending(b => b.CreatedAtUtc)
             .Take(10)
             .Select(b => new RecentBookingDto(
-                b.BookingNumber,
-                b.Service.Name,
-                b.Customer.User.FullName,
-                b.Assignment?.Professional.User.FullName,
+                b.BookingNumber ?? "—",
+                b.Service?.Name ?? "—",
+                b.Customer?.User?.FullName ?? "—",
+                b.Assignment?.Professional?.User?.FullName,
                 b.TotalAmount,
                 b.Status.ToString(),
                 b.PaymentStatus.ToString(),
