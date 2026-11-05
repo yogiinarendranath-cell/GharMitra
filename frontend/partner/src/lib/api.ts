@@ -1,46 +1,30 @@
 const BASE = "https://gharmitra-api.onrender.com";
 
 export type AuthResponse = {
-  token: string;
-  expiresAtUtc: string;
-  userId: string;
-  fullName: string;
-  email: string;
-  role: string;
-  isEmailVerified: boolean;
+  token: string; expiresAtUtc: string; userId: string;
+  fullName: string; email: string; role: string; isEmailVerified: boolean;
 };
 
 export type Profile = {
-  id: string;
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  city: string;
-  isVerified: boolean;
-  isAvailable: boolean;
-  rating: number;
-  totalJobs: number;
-  verifiedAtUtc: string | null;
-  verificationNotes: string | null;
+  id: string; fullName: string; email: string; phoneNumber: string;
+  city: string; isVerified: boolean; isAvailable: boolean;
+  rating: number; totalJobs: number;
+  verifiedAtUtc: string | null; verificationNotes: string | null;
 };
 
 export type Assignment = {
-  id: string;
-  bookingId: string;
-  bookingNumber: string;
-  serviceName: string;
-  customerName: string;
-  customerPhone: string;
-  addressLine: string;
-  city: string;
-  pincode: string | null;
-  notes: string | null;
-  scheduledStartUtc: string;
-  durationMinutes: number;
-  totalAmount: number;
-  bookingStatus: string;
-  assignedAtUtc: string;
-  acceptedAtUtc: string | null;
+  id: string; bookingId: string; bookingNumber: string;
+  serviceName: string; customerName: string; customerPhone: string;
+  addressLine: string; city: string; pincode: string | null; notes: string | null;
+  scheduledStartUtc: string; durationMinutes: number; totalAmount: number;
+  bookingStatus: string; assignedAtUtc: string;
+  acceptedAtUtc: string | null; startedAtUtc: string | null; completedAtUtc: string | null;
+};
+
+export type Earnings = {
+  totalEarnings: number; completedJobs: number;
+  thisMonthEarnings: number; thisMonthJobs: number;
+  last7Days: { date: string; amount: number; jobs: number }[];
 };
 
 export const tokenKey = "gm_partner_token";
@@ -62,10 +46,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
   if (!res.ok) {
     let msg = res.statusText;
-    try {
-      const body = await res.json();
-      msg = body.message ?? msg;
-    } catch { /* ignore */ }
+    try { const body = await res.json(); msg = body.message ?? msg; } catch {}
     throw new Error(msg);
   }
   if (res.status === 204) return undefined as T;
@@ -73,14 +54,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const partnerApi = {
-  register: (body: unknown) =>
-    request<AuthResponse>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
-  login: (body: unknown) =>
-    request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
-  verifyOtp: (body: { email: string; code: string }) =>
-    request<AuthResponse>("/api/auth/verify-otp", { method: "POST", body: JSON.stringify(body) }),
+  login: (body: unknown) => request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
   me: () => request<Profile>("/api/partner/me"),
   assignments: () => request<Assignment[]>("/api/partner/assignments"),
-  accept: (id: string) =>
-    request<Assignment>(`/api/partner/assignments/${id}/accept`, { method: "POST" }),
+  earnings: () => request<Earnings>("/api/partner/earnings"),
+  accept: (id: string) => request<Assignment>(`/api/partner/assignments/${id}/accept`, { method: "POST" }),
+  start: (id: string) => request<Assignment>(`/api/partner/assignments/${id}/start`, { method: "POST" }),
+  complete: (id: string) => request<Assignment>(`/api/partner/assignments/${id}/complete`, { method: "POST" }),
+  setAvailability: (isAvailable: boolean) => request<{message: string}>("/api/partner/availability", { method: "POST", body: JSON.stringify({ isAvailable }) }),
 };
