@@ -85,7 +85,7 @@ export default function App() {
         <div className="header-inner">
           <a href="#" className="logo">🏠 GharMitra Admin</a>
           <div className="header-nav">
-            <button className="btn-outline" onClick={logout}>Sign out</button>
+            <button className="btn-outline" onClick={() => refreshAll()} style={{ marginRight: "8px" }}>?? Refresh</button><button className="btn-outline" onClick={logout}>Sign out</button>
           </div>
         </div>
       </header>
