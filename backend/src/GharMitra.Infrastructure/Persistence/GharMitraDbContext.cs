@@ -104,8 +104,13 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
         b.Entity<Review>(e =>
         {
             e.HasIndex(x => x.BookingId).IsUnique();
+            e.Property(x => x.Comment).HasMaxLength(1000);
             e.HasOne(x => x.Booking).WithMany()
                 .HasForeignKey(x => x.BookingId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Customer).WithMany()
+                .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Professional).WithMany()
+                .HasForeignKey(x => x.ProfessionalId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

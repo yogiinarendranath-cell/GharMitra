@@ -15,6 +15,8 @@ public static class DependencyInjection
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<GharMitra.Application.Analytics.IAnalyticsService, GharMitra.Application.Analytics.AnalyticsService>();
         services.AddScoped<IProfessionalService, ProfessionalService>();
+        services.AddScoped<GharMitra.Application.Reviews.IReviewService, GharMitra.Application.Reviews.ReviewService>();
         return services;
     }
 }
+

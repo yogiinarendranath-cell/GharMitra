@@ -57,4 +57,22 @@ public class BookingsController : ControllerBase
         }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
+
+    [HttpGet("{id:guid}/can-review")]
+    public async Task<ActionResult<{ canReview: bool }>> CanReview(Guid id,
+        [FromServices] GharMitra.Application.Reviews.IReviewService reviews, CancellationToken ct)
+    {
+        return Ok(new { canReview = await reviews.CanReviewAsync(CurrentUserId, id, ct) });
+    }
+
+    [HttpPost("{id:guid}/reviews")]
+    public async Task<ActionResult<GharMitra.Application.Reviews.ReviewDto>> SubmitReview(
+        Guid id,
+        GharMitra.Application.Reviews.CreateReviewRequest request,
+        [FromServices] GharMitra.Application.Reviews.IReviewService reviews,
+        CancellationToken ct)
+    {
+        try { return Ok(await reviews.SubmitReviewAsync(CurrentUserId, id, request, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 }
