@@ -28,3 +28,6 @@ Thumbs.dbcloudflared.exe
 
 # Backup files from WriteAllText operations
 *.bak-*
+*.broken-*
+*.mojibake-*
+*.bak-*
