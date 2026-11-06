@@ -257,6 +257,8 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("BookingId");
 
+                    b.HasIndex("CreatedAtUtc");
+
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("CouponId", "BookingId")
@@ -287,7 +289,8 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("ReferralCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -296,6 +299,9 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ReferralCode")
+                        .IsUnique();
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -382,14 +388,17 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("RefereeDiscount")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<string>("RefereeEmail")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("ReferralCode")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid?>("ReferrerCouponId")
                         .HasColumnType("uuid");
@@ -398,7 +407,8 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("ReferrerReward")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -406,6 +416,9 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("RefereeCustomerId");
+
+                    b.HasIndex("ReferralCode")
+                        .IsUnique();
 
                     b.HasIndex("ReferrerCustomerId");
 
@@ -691,12 +704,13 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("GharMitra.Domain.Entities.Customer", "RefereeCustomer")
                         .WithMany()
-                        .HasForeignKey("RefereeCustomerId");
+                        .HasForeignKey("RefereeCustomerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("GharMitra.Domain.Entities.Customer", "ReferrerCustomer")
                         .WithMany()
                         .HasForeignKey("ReferrerCustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("RefereeCustomer");
