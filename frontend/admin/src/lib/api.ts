@@ -99,6 +99,29 @@ export type CouponStatsDto = {
   topCouponCode: string | null;
   topCouponUses: number;
 };
+
+export type CouponDailyTrendDto = {
+  date: string;
+  redemptions: number;
+  discount: number;
+};
+
+export type TopCouponDto = {
+  code: string;
+  uses: number;
+  totalDiscount: number;
+};
+
+export type CouponAnalyticsDto = {
+  totalDiscountGiven: number;
+  totalRedemptions: number;
+  conversionRate: number;
+  appliedAndPaid: number;
+  appliedButNotPaid: number;
+  dailyTrend: CouponDailyTrendDto[];
+  topCoupons: TopCouponDto[];
+};
+
 export const tokenKey = "gm_admin_token";
 
 export function setToken(t: string | null) {
@@ -153,5 +176,8 @@ export const adminApi = {
     if (toUtc) q.set("toUtc", toUtc);
     const qs = q.toString();
     return request<CouponStatsDto>(`/api/admin/coupons/stats${qs ? "?" + qs : ""}`);
+  },
+  couponAnalytics: (days = 30) => {
+    return request<CouponAnalyticsDto>(`/api/admin/coupons/analytics?days=${days}`);
   },
 };
