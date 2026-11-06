@@ -63,7 +63,7 @@ export default function App() {
   if (!session) {
     return (
       <div className="app-container">
-        <header className="app-header"><div className="header-inner"><a href="#" className="logo">≡ƒÅá GharMitra Partner</a></div></header>
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra Partner</a></div></header>
         <main>
           <div className="card" style={{ maxWidth: 400, margin: "4rem auto" }}>
             <h1 style={{ marginBottom: "1.5rem", textAlign: "center" }}>Partner Portal</h1>
@@ -77,7 +77,7 @@ export default function App() {
             {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
           </div>
         </main>
-        <footer className="app-footer"><div className="footer-inner">┬⌐ 2026 GharMitra Partner</div></footer>
+        <footer className="app-footer"><div className="footer-inner">© 2026 GharMitra Partner</div></footer>
       </div>
     );
   }
@@ -90,7 +90,7 @@ export default function App() {
     <div className="app-container">
       <header className="app-header">
         <div className="header-inner">
-          <a href="#" className="logo">≡ƒÅá GharMitra Partner</a>
+          <a href="#" className="logo">🏠 GharMitra Partner</a>
           <div className="header-nav" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <button
               onClick={toggleAvailability}
@@ -98,7 +98,7 @@ export default function App() {
               style={{ padding: "0.4rem 1rem", fontSize: "0.9rem" }}
               disabled={!verified}
             >
-              {profile?.isAvailable ? "≡ƒƒó Online" : "ΓÜ¬ Offline"}
+              {profile?.isAvailable ? "🟢 Online" : "⚪ Offline"}
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{
@@ -122,20 +122,20 @@ export default function App() {
       <main>
         {!verified && (
           <div style={{ background: "#FEF3C7", border: "1px solid #F59E0B", padding: "1rem", borderRadius: "8px", marginBottom: "1.5rem" }}>
-            <strong>ΓÅ│ Verification pending</strong> ΓÇö an admin must verify your profile before you can accept jobs.
+            <strong>⏳ Verification pending</strong> — an admin must verify your profile before you can accept jobs.
           </div>
         )}
 
         <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
           <button className={tab === "jobs" ? "btn-primary" : "btn-outline"} onClick={() => setTab("jobs")}>
-            ≡ƒÆ╝ Jobs ({activeJobs.length})
+            💼 Jobs ({activeJobs.length})
           </button>
           <button className={tab === "earnings" ? "btn-primary" : "btn-outline"} onClick={() => setTab("earnings")}>
-            ≡ƒÆ░ Earnings
+            💰 Earnings
           </button>
         </div>
 
-        {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>ΓÜá∩╕Å {error}</div>}
+        {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>⚠️ {error}</div>}
 
         {tab === "jobs" && (
           <>
@@ -154,7 +154,7 @@ export default function App() {
                       <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>{a.bookingNumber}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--success)" }}>Γé╣{a.totalAmount}</div>
+                      <div style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--success)" }}>₹{a.totalAmount}</div>
                       <span style={{
                         display: "inline-block", padding: "2px 10px", borderRadius: "999px",
                         fontSize: "0.75rem", fontWeight: 600, marginTop: "4px",
@@ -179,7 +179,7 @@ export default function App() {
                   </div>
 
                   <div style={{ background: "var(--bg)", padding: "0.75rem", borderRadius: "6px", marginBottom: "1rem", fontSize: "0.9rem" }}>
-                    ≡ƒôì {a.addressLine}, {a.city} {a.pincode}
+                    📍 {a.addressLine}, {a.city} {a.pincode}
                     {a.notes && <div style={{ marginTop: "4px", fontStyle: "italic", color: "var(--text-muted)" }}>"{a.notes}"</div>}
                   </div>
 
@@ -213,10 +213,10 @@ export default function App() {
                       <div>
                         <strong>{a.serviceName}</strong>
                         <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                          {a.bookingNumber} ┬╖ {new Date(a.scheduledStartUtc).toLocaleDateString()}
+                          {a.bookingNumber} · {new Date(a.scheduledStartUtc).toLocaleDateString()}
                         </div>
                       </div>
-                      <div style={{ textAlign: "right", fontWeight: 700, color: "var(--success)" }}>Γé╣{a.totalAmount}</div>
+                      <div style={{ textAlign: "right", fontWeight: 700, color: "var(--success)" }}>₹{a.totalAmount}</div>
                     </div>
                   ))}
                 </div>
@@ -231,7 +231,7 @@ export default function App() {
               <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
                 <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Total Earnings</div>
                 <div style={{ fontSize: "2.2rem", fontWeight: 700, color: "var(--success)", marginTop: "0.5rem" }}>
-                  Γé╣{earnings.totalEarnings.toLocaleString()}
+                  ₹{earnings.totalEarnings.toLocaleString()}
                 </div>
                 <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "4px" }}>
                   {earnings.completedJobs} jobs completed
@@ -240,7 +240,7 @@ export default function App() {
               <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
                 <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>This Month</div>
                 <div style={{ fontSize: "2.2rem", fontWeight: 700, color: "var(--primary)", marginTop: "0.5rem" }}>
-                  Γé╣{earnings.thisMonthEarnings.toLocaleString()}
+                  ₹{earnings.thisMonthEarnings.toLocaleString()}
                 </div>
                 <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "4px" }}>
                   {earnings.thisMonthJobs} jobs
@@ -256,7 +256,7 @@ export default function App() {
                   const height = (day.amount / max) * 100;
                   return (
                     <div key={day.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
-                      <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginBottom: "4px" }}>Γé╣{day.amount}</div>
+                      <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginBottom: "4px" }}>₹{day.amount}</div>
                       <div style={{ width: "100%", height: `${Math.max(height, 3)}%`, background: day.amount > 0 ? "var(--success)" : "var(--border)", borderRadius: "4px 4px 0 0" }} />
                       <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "4px" }}>
                         {new Date(day.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
@@ -272,7 +272,7 @@ export default function App() {
       <footer className="app-footer">
         <div className="footer-inner">
           <h3>GharMitra Partner</h3>
-          <div className="footer-bottom">┬⌐ 2026 GharMitra. All rights reserved.</div>
+          <div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div>
         </div>
       </footer>
     </div>
