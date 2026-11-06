@@ -61,6 +61,42 @@ export type AnalyticsDto = {
   recentBookings: RecentBookingDto[];
 };
 
+export type CouponDto = {
+  id: string;
+  code: string;
+  description: string | null;
+  discountType: "Percentage" | "FixedAmount";
+  discountValue: number;
+  maxDiscountAmount: number | null;
+  minOrderAmount: number;
+  validFromUtc: string | null;
+  validUntilUtc: string | null;
+  maxTotalUses: number | null;
+  currentUses: number;
+  maxUsesPerCustomer: number | null;
+  isActive: boolean;
+  createdAtUtc: string;
+};
+
+export type CreateCouponRequest = {
+  code: string;
+  description: string | null;
+  discountType: 1 | 2;
+  discountValue: number;
+  maxDiscountAmount: number | null;
+  minOrderAmount: number;
+  validFromUtc: string | null;
+  validUntilUtc: string | null;
+  maxTotalUses: number | null;
+  maxUsesPerCustomer: number | null;
+};
+
+export type CouponStatsDto = {
+  totalDiscountGiven: number;
+  totalRedemptions: number;
+  topCouponCode: string | null;
+  topCouponUses: number;
+};
 export const tokenKey = "gm_admin_token";
 
 export function setToken(t: string | null) {

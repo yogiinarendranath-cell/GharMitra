@@ -3,7 +3,7 @@ import "./App.css";
 import { adminApi, setToken, type AuthResponse, type BookingDto, type ProfessionalDto, type AnalyticsDto } from "./lib/api";
 import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
 
-type Tab = "analytics" | "bookings" | "professionals";
+type Tab = "analytics" | "bookings" | "professionals" | "coupons";
 
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
@@ -59,7 +59,7 @@ export default function App() {
   if (!session) {
     return (
       <div className="app-container">
-        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra Admin</a></div></header>
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">ðŸ  GharMitra Admin</a></div></header>
         <main>
           <div className="card" style={{ maxWidth: 400, margin: "4rem auto" }}>
             <h1 style={{ marginBottom: "1.5rem", textAlign: "center" }}>Admin Portal</h1>
@@ -71,7 +71,7 @@ export default function App() {
             {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
           </div>
         </main>
-        <footer className="app-footer"><div className="footer-inner">© 2026 GharMitra Admin</div></footer>
+        <footer className="app-footer"><div className="footer-inner">Â© 2026 GharMitra Admin</div></footer>
       </div>
     );
   }
@@ -83,7 +83,7 @@ export default function App() {
     <div className="app-container">
       <header className="app-header">
         <div className="header-inner">
-          <a href="#" className="logo">🏠 GharMitra Admin</a>
+          <a href="#" className="logo">ðŸ  GharMitra Admin</a>
           <div className="header-nav">
             <button className="btn-outline" onClick={() => refreshAll()} style={{ marginRight: "8px" }}>?? Refresh</button><button className="btn-outline" onClick={logout}>Sign out</button>
           </div>
@@ -91,13 +91,14 @@ export default function App() {
       </header>
 
       <main>
-        {live && <div className="live-bar">📡 Live: {live}</div>}
-        {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>⚠️ {error}</div>}
+        {live && <div className="live-bar">ðŸ“¡ Live: {live}</div>}
+        {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>âš ï¸ {error}</div>}
 
         <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
-          <button className={tab === "analytics" ? "btn-primary" : "btn-outline"} onClick={() => setTab("analytics")}>📊 Analytics</button>
+          <button className={tab === "analytics" ? "btn-primary" : "btn-outline"} onClick={() => setTab("analytics")}>ðŸ“Š Analytics</button>
           <button className={tab === "bookings" ? "btn-primary" : "btn-outline"} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
           <button className={tab === "professionals" ? "btn-primary" : "btn-outline"} onClick={() => setTab("professionals")}>Professionals ({pros.length})</button>
+          <button className={tab === "coupons" ? "btn-primary" : "btn-outline"} onClick={() => setTab("coupons")}>Coupons</button>
         </div>
 
         {tab === "analytics" && analytics && kpis && (
@@ -106,7 +107,7 @@ export default function App() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
               <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
                 <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>Total Revenue</div>
-                <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--success)" }}>₹{kpis.totalRevenue.toLocaleString()}</div>
+                <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--success)" }}>â‚¹{kpis.totalRevenue.toLocaleString()}</div>
               </div>
               <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
                 <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>Total Bookings</div>
@@ -157,7 +158,7 @@ export default function App() {
                   const height = (day.revenue / maxRevenue) * 100;
                   return (
                     <div key={day.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
-                      <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginBottom: "4px" }}>₹{day.revenue}</div>
+                      <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginBottom: "4px" }}>â‚¹{day.revenue}</div>
                       <div style={{
                         width: "100%",
                         height: `${Math.max(height, 3)}%`,
@@ -176,7 +177,7 @@ export default function App() {
 
             {/* Top Professionals */}
             <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
-              <h3 style={{ marginBottom: "1rem" }}>🏆 Top Professionals</h3>
+              <h3 style={{ marginBottom: "1rem" }}>ðŸ† Top Professionals</h3>
               {analytics.topProfessionals.length === 0 ? (
                 <p style={{ color: "var(--text-muted)" }}>No professional data yet.</p>
               ) : (
@@ -194,10 +195,10 @@ export default function App() {
                     {analytics.topProfessionals.map((p, i) => (
                       <tr key={p.id} style={{ borderTop: "1px solid var(--border)" }}>
                         <td>{i + 1}</td>
-                        <td><strong>{p.fullName}</strong> {p.isVerified && "✅"}</td>
+                        <td><strong>{p.fullName}</strong> {p.isVerified && "âœ…"}</td>
                         <td>{p.city}</td>
                         <td align="right">{p.totalJobs}</td>
-                        <td align="right" style={{ color: "var(--success)", fontWeight: 600 }}>₹{p.totalRevenue}</td>
+                        <td align="right" style={{ color: "var(--success)", fontWeight: 600 }}>â‚¹{p.totalRevenue}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -207,7 +208,7 @@ export default function App() {
 
             {/* Top Services */}
             <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
-              <h3 style={{ marginBottom: "1rem" }}>📈 Top Services</h3>
+              <h3 style={{ marginBottom: "1rem" }}>ðŸ“ˆ Top Services</h3>
               {analytics.topServices.length === 0 ? (
                 <p style={{ color: "var(--text-muted)" }}>No service data yet.</p>
               ) : (
@@ -224,7 +225,7 @@ export default function App() {
                       <tr key={i} style={{ borderTop: "1px solid var(--border)" }}>
                         <td><strong>{s.serviceName}</strong></td>
                         <td align="right">{s.bookingCount}</td>
-                        <td align="right" style={{ color: "var(--success)", fontWeight: 600 }}>₹{s.revenue}</td>
+                        <td align="right" style={{ color: "var(--success)", fontWeight: 600 }}>â‚¹{s.revenue}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -234,7 +235,7 @@ export default function App() {
 
             {/* Recent Bookings */}
             <div className="card" style={{ padding: "1.5rem" }}>
-              <h3 style={{ marginBottom: "1rem" }}>🕒 Recent Bookings</h3>
+              <h3 style={{ marginBottom: "1rem" }}>ðŸ•’ Recent Bookings</h3>
               {analytics.recentBookings.length === 0 ? (
                 <p style={{ color: "var(--text-muted)" }}>No bookings yet.</p>
               ) : (
@@ -256,8 +257,8 @@ export default function App() {
                         <td>{b.bookingNumber}</td>
                         <td>{b.serviceName}</td>
                         <td>{b.customerName}</td>
-                        <td>{b.professionalName ?? "—"}</td>
-                        <td align="right">₹{b.amount}</td>
+                        <td>{b.professionalName ?? "â€”"}</td>
+                        <td align="right">â‚¹{b.amount}</td>
                         <td><span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span></td>
                         <td><span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span></td>
                       </tr>
@@ -284,14 +285,14 @@ export default function App() {
                   <tr key={b.id}>
                     <td><strong>{b.bookingNumber}</strong><br/><span style={{fontSize:"0.8rem", color:"var(--text-muted)"}}>{b.city}</span></td>
                     <td>{b.serviceName}</td>
-                    <td>₹{b.totalAmount}</td>
+                    <td>â‚¹{b.totalAmount}</td>
                     <td>
                       <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
                         <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
                         <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
                       </div>
                     </td>
-                    <td>{b.professionalName ?? "—"}</td>
+                    <td>{b.professionalName ?? "â€”"}</td>
                     <td>
                       {b.status === "Pending" && (
                         b.paymentStatus !== 'Paid'
@@ -299,7 +300,7 @@ export default function App() {
                           : verifiedPros.length === 0
                             ? <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No verified pros</span>
                             : <select defaultValue="" onChange={e => { if (e.target.value) assign(b.id, e.target.value); }} style={{ minWidth: "180px", padding: "0.4rem" }}>
-                                <option value="">Select a pro…</option>
+                                <option value="">Select a proâ€¦</option>
                                 {verifiedPros.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
                               </select>
                       )}
@@ -320,9 +321,9 @@ export default function App() {
                   <tr key={p.id}>
                     <td><strong>{p.fullName}</strong></td>
                     <td>{p.city}</td>
-                    <td>⭐ {p.rating.toFixed(1)}</td>
+                    <td>â­ {p.rating.toFixed(1)}</td>
                     <td>{p.isAvailable ? "Yes" : "No"}</td>
-                    <td>{p.isVerified ? <span style={{color:"var(--success)"}}>✅ Yes</span> : <span style={{color:"var(--warning)"}}>⏳ No</span>}</td>
+                    <td>{p.isVerified ? <span style={{color:"var(--success)"}}>âœ… Yes</span> : <span style={{color:"var(--warning)"}}>â³ No</span>}</td>
                     <td>{!p.isVerified && <button onClick={() => verify(p.id)} className="btn-primary btn-sm">Verify</button>}</td>
                   </tr>
                 ))}
@@ -335,7 +336,7 @@ export default function App() {
       <footer className="app-footer">
         <div className="footer-inner">
           <h3>GharMitra Admin</h3>
-          <div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div>
+          <div className="footer-bottom">Â© 2026 GharMitra. All rights reserved.</div>
         </div>
       </footer>
     </div>
