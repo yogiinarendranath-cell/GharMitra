@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { adminApi, setToken, type AuthResponse, type BookingDto, type ProfessionalDto, type AnalyticsDto } from "./lib/api";
 import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
+import CouponsTab from "./CouponsTab";
 
-type Tab = "analytics" | "bookings" | "professionals";
+type Tab = "analytics" | "bookings" | "professionals" | "coupons";
 
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
@@ -85,7 +86,8 @@ export default function App() {
         <div className="header-inner">
           <a href="#" className="logo">🏠 GharMitra Admin</a>
           <div className="header-nav">
-            <button className="btn-outline" onClick={() => refreshAll()} style={{ marginRight: "8px" }}>?? Refresh</button><button className="btn-outline" onClick={logout}>Sign out</button>
+            <button className="btn-outline" onClick={() => refreshAll()} style={{ marginRight: "8px" }}>🔄 Refresh</button>
+            <button className="btn-outline" onClick={logout}>Sign out</button>
           </div>
         </div>
       </header>
@@ -98,11 +100,13 @@ export default function App() {
           <button className={tab === "analytics" ? "btn-primary" : "btn-outline"} onClick={() => setTab("analytics")}>📊 Analytics</button>
           <button className={tab === "bookings" ? "btn-primary" : "btn-outline"} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
           <button className={tab === "professionals" ? "btn-primary" : "btn-outline"} onClick={() => setTab("professionals")}>Professionals ({pros.length})</button>
+          <button className={tab === "coupons" ? "btn-primary" : "btn-outline"} onClick={() => setTab("coupons")}>Coupons</button>
         </div>
+
+        {tab === "coupons" && <CouponsTab />}
 
         {tab === "analytics" && analytics && kpis && (
           <>
-            {/* KPI Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
               <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
                 <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>Total Revenue</div>
@@ -128,7 +132,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Booking Status Breakdown */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
               <div className="card" style={{ padding: "1rem", textAlign: "center" }}>
                 <div style={{ color: "var(--warning)", fontWeight: 700, fontSize: "1.5rem" }}>{kpis.pendingBookings}</div>
@@ -148,7 +151,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Last 7 Days Revenue Chart (Simple Bar Chart) */}
             <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
               <h3 style={{ marginBottom: "1rem" }}>Last 7 Days Revenue</h3>
               <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: "150px", gap: "8px" }}>
@@ -174,7 +176,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Top Professionals */}
             <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
               <h3 style={{ marginBottom: "1rem" }}>🏆 Top Professionals</h3>
               {analytics.topProfessionals.length === 0 ? (
@@ -205,7 +206,6 @@ export default function App() {
               )}
             </div>
 
-            {/* Top Services */}
             <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
               <h3 style={{ marginBottom: "1rem" }}>📈 Top Services</h3>
               {analytics.topServices.length === 0 ? (
@@ -232,7 +232,6 @@ export default function App() {
               )}
             </div>
 
-            {/* Recent Bookings */}
             <div className="card" style={{ padding: "1.5rem" }}>
               <h3 style={{ marginBottom: "1rem" }}>🕒 Recent Bookings</h3>
               {analytics.recentBookings.length === 0 ? (
