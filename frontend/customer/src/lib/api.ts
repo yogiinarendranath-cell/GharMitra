@@ -44,6 +44,40 @@ export type BookingDto = {
   professionalLongitude: number | null;
 };
 
+// ───── Referral types ─────
+export type MyReferralCodeDto = {
+  referralCode: string;
+  shareUrl: string;
+  successfulReferrals: number;
+  totalEarned: number;
+};
+
+export type ReferralItemDto = {
+  referralCode: string;
+  refereeName: string | null;
+  refereeEmail: string | null;
+  isRedeemed: boolean;
+  redeemedAtUtc: string | null;
+  referrerReward: number;
+  createdAtUtc: string;
+};
+
+export type MyReferralsListDto = {
+  referralCode: string;
+  shareUrl: string;
+  totalShared: number;
+  totalRedeemed: number;
+  totalEarned: number;
+  items: ReferralItemDto[];
+};
+
+export type AcceptReferralResponse = {
+  success: boolean;
+  message: string;
+  refereeDiscount: number;
+  referrerReward: number;
+};
+
 export const tokenKey = "gm_token";
 
 export function setToken(t: string | null) {
@@ -117,4 +151,13 @@ export const api = {
     ),
   removeCoupon: (bookingId: string) =>
     request<void>(`/api/bookings/${bookingId}/apply-coupon`, { method: "DELETE" }),
+
+  // ───── Referral endpoints ─────
+  myReferralCode: () => request<MyReferralCodeDto>("/api/referrals/my-code"),
+  myReferrals: () => request<MyReferralsListDto>("/api/referrals/my"),
+  acceptReferral: (body: { referralCode: string; refereeEmail: string }) =>
+    request<AcceptReferralResponse>("/api/referrals/accept", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };

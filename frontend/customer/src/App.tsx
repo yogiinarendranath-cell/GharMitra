@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import ApplyCoupon from "./ApplyCoupon";
+import ReferAFriend from "./ReferAFriend";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -89,6 +90,22 @@ export default function App() {
       } else {
         const res = await api.register({ fullName, email, phoneNumber, password, role: 1, city });
         setToken(res.token); setSession(res); setBookings(await api.myBookings());
+        
+        // Auto-accept referral if ?ref= code is in URL
+        const refCode = new URLSearchParams(window.location.search).get("ref");
+        if (refCode) {
+          try {
+            const acceptResult = await api.acceptReferral({
+              referralCode: refCode,
+              refereeEmail: email,
+            });
+            if (acceptResult.success) {
+              alert(acceptResult.message);
+            }
+          } catch {
+            // Silently ignore — user still registered successfully
+          }
+        }
       }
     } catch (err) {
       setError((err as Error).message);
@@ -216,6 +233,8 @@ export default function App() {
             </div>
           ))}
         </div>
+        <ReferAFriend />
+        
         <h2 style={{ marginBottom: "1.5rem", marginTop: "3rem" }}>My Bookings</h2>
         <div className="card" style={{ padding: 0 }}>
           {bookings.length === 0 && <p style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No bookings yet.</p>}
