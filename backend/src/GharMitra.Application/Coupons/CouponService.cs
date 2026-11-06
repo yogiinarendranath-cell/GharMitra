@@ -80,7 +80,7 @@ public class CouponService : ICouponService
         if (coupon.MaxTotalUses.HasValue && coupon.CurrentUses >= coupon.MaxTotalUses.Value)
             throw new InvalidOperationException("This coupon has reached its total usage limit.");
         if (booking.TotalAmount < coupon.MinOrderAmount)
-            throw new InvalidOperationException($"Minimum order of ₹{coupon.MinOrderAmount} required.");
+            throw new InvalidOperationException($"Minimum order of â‚¹{coupon.MinOrderAmount} required.");
 
         if (coupon.MaxUsesPerCustomer.HasValue)
         {
@@ -131,6 +131,33 @@ public class CouponService : ICouponService
         booking.UpdatedAtUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+    }
+    public async Task<CouponStatsDto> GetStatsAsync(DateTime? fromUtc, DateTime? toUtc, CancellationToken ct = default)
+    {
+        var q = _db.CouponRedemptions.AsQueryable();
+        if (fromUtc.HasValue) q = q.Where(r => r.CreatedAtUtc >= fromUtc.Value);
+        if (toUtc.HasValue)   q = q.Where(r => r.CreatedAtUtc <  toUtc.Value);
+
+        var totalDiscount = await q.SumAsync(r => (decimal?)r.DiscountApplied, ct) ?? 0m;
+        var totalRedeemed = await q.CountAsync(ct);
+
+        var top = await q
+            .GroupBy(r => r.CouponId)
+            .Select(g => new { CouponId = g.Key, Uses = g.Count() })
+            .OrderByDescending(x => x.Uses)
+            .FirstOrDefaultAsync(ct);
+
+        string? topCode = null;
+        int topUses = 0;
+        if (top != null)
+        {
+            topCode = await _db.Coupons.Where(c => c.Id == top.CouponId)
+                                       .Select(c => c.Code)
+                                       .FirstOrDefaultAsync(ct);
+            topUses = top.Uses;
+        }
+
+        return new CouponStatsDto(totalDiscount, totalRedeemed, topCode, topUses);
     }
 
     private static CouponDto ToDto(Coupon c) =>

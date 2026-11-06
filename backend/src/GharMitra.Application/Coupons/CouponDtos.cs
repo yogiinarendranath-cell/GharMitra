@@ -22,3 +22,9 @@ public record CouponDto(
 public record ApplyCouponRequest(string Code);
 
 public record ApplyCouponResponse(string Code, decimal DiscountApplied, decimal OriginalAmount, decimal NewAmount);
+
+public record CouponStatsDto(
+    decimal TotalDiscountGiven,
+    int TotalRedemptions,
+    string? TopCouponCode,
+    int TopCouponUses);

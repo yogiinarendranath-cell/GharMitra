@@ -74,4 +74,11 @@ public class AdminController : ControllerBase
         try { return Ok(await coupons.CreateAsync(request, ct)); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
+    [HttpGet("coupons/stats")]
+    public async Task<ActionResult<GharMitra.Application.Coupons.CouponStatsDto>> GetCouponStats(
+        [FromServices] GharMitra.Application.Coupons.ICouponService coupons,
+        DateTime? fromUtc = null, DateTime? toUtc = null,
+        CancellationToken ct = default)
+        => Ok(await coupons.GetStatsAsync(fromUtc, toUtc, ct));
+
 }
