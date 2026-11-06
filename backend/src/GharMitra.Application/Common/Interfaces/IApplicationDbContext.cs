@@ -15,6 +15,7 @@ public interface IApplicationDbContext
     DbSet<Review> Reviews { get; }
     DbSet<Coupon> Coupons { get; }
     DbSet<CouponRedemption> CouponRedemptions { get; }
+    DbSet<Referral> Referrals { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
