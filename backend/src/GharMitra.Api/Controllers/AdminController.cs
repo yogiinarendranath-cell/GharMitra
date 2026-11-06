@@ -87,4 +87,19 @@ public class AdminController : ControllerBase
         CancellationToken ct = default)
         => Ok(await coupons.GetAnalyticsAsync(days, ct));
 
+        
+    // ───── REFERRAL MANAGEMENT ─────
+
+    [HttpGet("referrals")]
+    public async Task<ActionResult<List<GharMitra.Application.Referrals.AdminReferralListDto>>> GetReferrals(
+        [FromServices] GharMitra.Application.Referrals.IReferralService referrals,
+        CancellationToken ct)
+        => Ok(await referrals.GetAllForAdminAsync(ct));
+
+    [HttpGet("referrals/stats")]
+    public async Task<ActionResult<GharMitra.Application.Referrals.ReferralAdminStatsDto>> GetReferralStats(
+        [FromServices] GharMitra.Application.Referrals.IReferralService referrals,
+        CancellationToken ct)
+        => Ok(await referrals.GetAdminStatsAsync(ct));
+
 }
