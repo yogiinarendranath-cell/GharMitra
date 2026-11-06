@@ -35,13 +35,9 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
 
-  const [showOtp, setShowOtp] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [showPhoneOtp, setShowPhoneOtp] = useState(false);
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
-  const [phoneOtpCode, setPhoneOtpCode] = useState("");
 
   const [catalog, setCatalog] = useState<ServiceCategoryDto[]>([]);
   const [bookings, setBookings] = useState<BookingDto[]>([]);
@@ -79,22 +75,19 @@ export default function App() {
     return () => disconnectBookingHub();
   }, [session]);
 
-  async function submitLogin(e: React.FormEvent) {
+  async function submitAuth(e: React.FormEvent) {
     e.preventDefault(); setError(null);
     try {
-      const s = await api.login({ email, password });
-      setToken(s.token); setSession(s);
-      setBookings(await api.myBookings());
-    } catch (err) { setError((err as Error).message); }
-  }
-
-  async function submitRegister(e: React.FormEvent) {
-    e.preventDefault(); setError(null);
-    try {
-      const s = await api.register({ email, password, fullName, phoneNumber, city });
-      setToken(s.token); setSession(s);
-      setBookings(await api.myBookings());
-    } catch (err) { setError((err as Error).message); }
+      if (mode === "login") {
+        const res = await api.login({ email, password });
+        setToken(res.token); setSession(res); setBookings(await api.myBookings());
+      } else {
+        const res = await api.register({ fullName, email, phoneNumber, password, role: 1, city });
+        setToken(res.token); setSession(res); setBookings(await api.myBookings());
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
   async function submitBooking(e: React.FormEvent) {
@@ -104,68 +97,74 @@ export default function App() {
       await api.createBooking({
         serviceId: selectedService.id, scheduledStartUtc: new Date(scheduledAt).toISOString(),
         durationMinutes: selectedService.durationMinutes, addressLine: address, city,
-        pincode: "411001", notes: null
+        pincode: "411045", notes: "Please ring the bell.",
       });
       setBookings(await api.myBookings()); setSelectedService(null);
     } catch (err) { setError((err as Error).message); }
   }
 
   async function handlePay(b: BookingDto) {
+    setError(null);
     try {
       const order = await api.payBooking(b.id);
-      if (!confirm(`[MOCK MODE] Simulate successful payment of ₹${order.amount}?`)) return;
-      await api.verifyPayment(b.id, { razorpayOrderId: order.orderId, razorpayPaymentId: `pay_mock_${Date.now()}`, razorpaySignature: "mock_signature" });
-      setBookings(await api.myBookings());
+      if (order.isMock) {
+        if (!confirm(`[MOCK MODE] Simulate successful payment of ₹${order.amount}?`)) return;
+        await api.verifyPayment(b.id, { razorpayOrderId: order.orderId, razorpayPaymentId: `pay_mock_${Date.now()}`, razorpaySignature: "mock_signature" });
+        setBookings(await api.myBookings());
+      }
     } catch (err) { setError((err as Error).message); }
   }
 
   async function cancel(b: BookingDto) {
     if (!confirm(`Cancel booking ${b.bookingNumber}?`)) return;
-    try { await api.cancelBooking(b.id); setBookings(await api.myBookings()); }
+    try { await api.cancelBooking(b.id, "Customer cancelled"); setBookings(await api.myBookings()); }
     catch (err) { setError((err as Error).message); }
   }
 
   async function submitReview(e: React.FormEvent) {
     e.preventDefault(); if (!reviewBookingId) return;
+    setError(null);
     try {
-      await api.submitReview(reviewBookingId, { rating: reviewRating, comment: reviewComment });
-      setReviewBookingId(null); setBookings(await api.myBookings());
+      await api.submitReview(reviewBookingId, { rating: reviewRating, comment: reviewComment || undefined });
+      setReviewBookingId(null);
+      setReviewComment("");
+      setReviewRating(5);
+      alert("Thank you! Your review has been submitted.");
     } catch (err) { setError((err as Error).message); }
   }
 
-  function logout() {
-    disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setLive(null);
-  }
+  function logout() { disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setLive(null); }
 
   if (!session) {
     return (
       <div className="app-container">
-        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a></div></header>
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav"><button className="btn-outline" onClick={() => setMode("login")}>Sign In</button></div></div></header>
         <main>
-          <div className="card" style={{ maxWidth: 400, margin: "4rem auto" }}>
-            <h1 style={{ marginBottom: "1.5rem", textAlign: "center" }}>{mode === "login" ? "Sign in" : "Create account"}</h1>
-            <form onSubmit={mode === "login" ? submitLogin : submitRegister} style={{ display: "grid", gap: "1rem" }}>
-              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email" required />
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required />
+          <div className="hero-main">
+            <h1>Get House Help in 10 min</h1>
+            <p>Trained, verified Experts for House Help, home cleaning, dishwashing, laundry and more, at your door in about 10 minutes.</p>
+          </div>
+          <div className="card" style={{ maxWidth: 400, margin: "0 auto" }}>
+            <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>{mode === "login" ? "Welcome Back" : "Create an Account"}</h2>
+            <form onSubmit={submitAuth} style={{ display: "grid", gap: "1rem" }}>
               {mode === "register" && (
                 <>
                   <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full name" required />
-                  <input value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="Phone (e.g. +919876543210)" required />
+                  <input value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="Phone (+919876543210)" required />
                   <input value={city} onChange={e => setCity(e.target.value)} placeholder="City" required />
                 </>
               )}
-              <button type="submit" className="btn-primary" style={{ padding: "0.8rem" }}>{mode === "login" ? "Sign in" : "Create account"}</button>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required />
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required />
+              <button type="submit" className="btn-primary" style={{ padding: "0.8rem" }}>{mode === "login" ? "Sign In" : "Create Account"}</button>
             </form>
-            <p style={{ marginTop: "1rem", textAlign: "center", fontSize: "0.9rem", color: "var(--text-muted)" }}>
-              {mode === "login" ? "No account?" : "Have an account?"}{" "}
-              <button style={{ background: "none", border: 0, color: "var(--primary)", cursor: "pointer", padding: 0, textDecoration: "underline" }} onClick={() => setMode(mode === "login" ? "register" : "login")}>
-                {mode === "login" ? "Register" : "Sign in"}
-              </button>
+            <p style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.9rem" }}>
+              {mode === "login" ? "New here? " : "Already have an account? "}
+              <span style={{ color: "var(--primary)", cursor: "pointer", fontWeight: 600 }} onClick={() => setMode(mode === "login" ? "register" : "login")}>{mode === "login" ? "Create an account" : "Sign In"}</span>
             </p>
-            {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
+            {error && <p style={{ color: "var(--danger)", marginTop: "1rem", textAlign: "center" }}>{error}</p>}
           </div>
         </main>
-        <footer className="app-footer"><div className="footer-inner">© 2026 GharMitra</div></footer>
       </div>
     );
   }
@@ -173,42 +172,47 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="header-inner">
-          <a href="#" className="logo">🏠 GharMitra</a>
-          <div className="header-nav">
-            <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>{session.email}</span>
+        <div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{
+              width: "40px", height: "40px", borderRadius: "50%",
+              background: "var(--primary)", color: "white",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 700, fontSize: "1.1rem"
+            }}>
+              {session.fullName.charAt(0).toUpperCase()}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+              <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{session.fullName}</span>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                {session.email}   <span style={{
+                  fontWeight: 600,
+                  color: "var(--primary)"
+                }}>{session.role}</span>
+              </span>
+            </div>
             <button className="btn-outline" onClick={logout}>Sign out</button>
-          </div>
-        </div>
+          </div></div>
       </header>
-
       <main>
         {live && <div className="live-bar">📡 Live: {live}</div>}
-        {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>⚠️ {error}</div>}
-
-        <h1 style={{ marginBottom: "2rem" }}>Our Services</h1>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1.5rem", marginBottom: "3rem" }}>
-          {catalog.map(cat => cat.services.map(s => {
-            const img = SERVICE_IMAGES[s.name] ?? DEFAULT_IMAGE;
-            return (
-              <div key={s.id} className="card" style={{ padding: 0, overflow: "hidden" }}>
-                <div style={{ height: "180px", background: `url(${img}) center/cover` }} />
-                <div style={{ padding: "1rem" }}>
-                  <h3 style={{ marginBottom: "0.5rem" }}>{s.name}</h3>
-                  <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.75rem" }}>
-                    From ₹{s.basePrice} • {s.durationMinutes} min
-                  </p>
-                  <button className="btn-primary" style={{ width: "100%" }} onClick={() => {
-                    setSelectedService(s);
-                    const future = new Date(Date.now() + 2 * 3600_000);
-                    const pad = (n: number) => String(n).padStart(2, "0");
-                    const local = `${future.getFullYear()}-${pad(future.getMonth() + 1)}-${pad(future.getDate())}T${pad(future.getHours())}:${pad(future.getMinutes())}`;
-                    setScheduledAt(local);
-                  }}>Book Now</button>
-                </div>
+        <h2 style={{ marginBottom: "1.5rem" }}>Our Services</h2>
+        <div className="service-grid-full">
+          {catalog.flatMap(c => c.services).map(s => (
+            <div key={s.id} className="service-card-large">
+              <img src={SERVICE_IMAGES[s.name] || DEFAULT_IMAGE} alt={s.name} />
+              <div className="service-card-overlay">
+                <h3>{s.name}</h3>
+                <p>From ₹{s.basePrice} • {s.durationMinutes} min</p>
+                <button className="btn-primary" style={{ marginTop: "10px", width: "100%", padding: "0.6rem" }} onClick={() => {
+                  setSelectedService(s);
+                  const future = new Date(Date.now() + 2 * 3600_000);
+                  const pad = (n: number) => String(n).padStart(2, "0");
+                  const local = `${future.getFullYear()}-${pad(future.getMonth() + 1)}-${pad(future.getDate())}T${pad(future.getHours())}:${pad(future.getMinutes())}`;
+                  setScheduledAt(local);
+                }}>Book Now</button>
               </div>
-            );
-          }))}
+            </div>
+          ))}
         </div>
         <h2 style={{ marginBottom: "1.5rem", marginTop: "3rem" }}>My Bookings</h2>
         <div className="card" style={{ padding: 0 }}>
@@ -257,7 +261,6 @@ export default function App() {
           ))}
         </div>
       </main>
-
       {reviewBookingId && (
         <div className="modal-backdrop" onClick={() => setReviewBookingId(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -268,19 +271,42 @@ export default function App() {
             <form onSubmit={submitReview} style={{ display: "grid", gap: "1rem" }}>
               <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", fontSize: "2.5rem" }}>
                 {[1, 2, 3, 4, 5].map(star => (
-                  <button key={star} type="button" onClick={() => setReviewRating(star)}
-                    style={{ background: "none", border: 0, cursor: "pointer", color: star <= reviewRating ? "#F59E0B" : "var(--border)", padding: 0 }}>
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    style={{
+                      background: "transparent",
+                      fontSize: "2.5rem",
+                      padding: "0.25rem",
+                      cursor: "pointer",
+                      color: star <= reviewRating ? "#F59E0B" : "#D1D5DB"
+                    }}
+                  >
                     ★
                   </button>
                 ))}
               </div>
-              <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Optional comments..." rows={3} style={{ padding: "0.75rem", border: "1px solid var(--border)", borderRadius: "8px", fontFamily: "inherit" }} />
-              <button type="submit" className="btn-primary" style={{ padding: "0.8rem" }}>Submit Review</button>
+              <textarea
+                value={reviewComment}
+                onChange={e => setReviewComment(e.target.value)}
+                placeholder="Optional: share what went well or what could be better..."
+                rows={4}
+                style={{ padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border)", fontFamily: "inherit", fontSize: "0.95rem", resize: "vertical" }}
+              />
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button type="button" onClick={() => setReviewBookingId(null)} className="btn-outline" style={{ flex: 1, padding: "0.75rem" }}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" style={{ flex: 2, padding: "0.75rem" }}>
+                  Submit Review
+                </button>
+              </div>
             </form>
+            {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
           </div>
         </div>
       )}
-
       {selectedService && (
         <div className="modal-backdrop" onClick={() => setSelectedService(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -300,7 +326,6 @@ export default function App() {
           </div>
         </div>
       )}
-
       <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div></div></footer>
     </div>
   );
