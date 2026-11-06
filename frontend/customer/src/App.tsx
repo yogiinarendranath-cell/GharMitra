@@ -114,7 +114,7 @@ export default function App() {
     try {
       const order = await api.payBooking(b.id);
       if (order.isMock) {
-        if (!confirm(`[MOCK MODE] Simulate successful payment of Γé╣${order.amount}?`)) return;
+        if (!confirm(`[MOCK MODE] Simulate successful payment of ₹╣${order.amount}?`)) return;
         await api.verifyPayment(b.id, { razorpayOrderId: order.orderId, razorpayPaymentId: `pay_mock_${Date.now()}`, razorpaySignature: "mock_signature" });
         setBookings(await api.myBookings());
       }
@@ -208,7 +208,7 @@ export default function App() {
               <img src={SERVICE_IMAGES[s.name] || DEFAULT_IMAGE} alt={s.name} />
               <div className="service-card-overlay">
                 <h3>{s.name}</h3>
-                <p>From Γé╣{s.basePrice} ΓÇó {s.durationMinutes} min</p>
+                <p>From ₹╣{s.basePrice} • {s.durationMinutes} min</p>
                 <button className="btn-primary" style={{ marginTop: "10px", width: "100%", padding: "0.6rem" }} onClick={() => {
                   setSelectedService(s);
                   const future = new Date(Date.now() + 2 * 3600_000);
@@ -227,7 +227,7 @@ export default function App() {
             <div key={b.id} className="booking-item">
               <div className="booking-info">
                 <h4>{b.serviceName}</h4>
-                <div className="booking-meta">Γé╣{b.totalAmount} ΓÇó {new Date(b.scheduledStartUtc).toLocaleString()}</div>
+                <div className="booking-meta">₹╣{b.totalAmount} • {new Date(b.scheduledStartUtc).toLocaleString()}</div>
                 <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
                   <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
                   <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
@@ -324,7 +324,7 @@ export default function App() {
             <form onSubmit={submitBooking} style={{ display: "grid", gap: "1rem" }}>
               <div style={{ background: "#F9FAFB", padding: "1rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
                 <strong>{selectedService.name}</strong><br/>
-                <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Γé╣{selectedService.basePrice} ΓÇó {selectedService.durationMinutes} mins</span>
+                <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>₹╣{selectedService.basePrice} • {selectedService.durationMinutes} mins</span>
               </div>
               <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>Address</label><input value={address} onChange={e => setAddress(e.target.value)} required /></div>
               <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>When?</label><input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} required /></div>
