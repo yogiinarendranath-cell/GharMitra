@@ -13,6 +13,8 @@ public interface IApplicationDbContext
     DbSet<Booking> Bookings { get; }
     DbSet<BookingAssignment> BookingAssignments { get; }
     DbSet<Review> Reviews { get; }
+    DbSet<Coupon> Coupons { get; }
+    DbSet<CouponRedemption> CouponRedemptions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
