@@ -34,6 +34,12 @@ export default function App() {
   const [city, setCity] = useState("Pune");
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
+  // Read `?code=WELCOME50` from URL — auto-fills coupon at checkout
+  const [initialPromoCode] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search);
+    return (params.get("code") ?? "").trim().toUpperCase();
+  });
 
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
@@ -242,6 +248,7 @@ export default function App() {
                     bookingId={b.id}
                     originalAmount={b.totalAmount}
                     paid={false}
+                    initialCode={initialPromoCode}
                     onChange={({ newAmount }) => {
                       setBookings(prev => prev.map(x => x.id === b.id ? { ...x, totalAmount: newAmount } : x));
                     }}

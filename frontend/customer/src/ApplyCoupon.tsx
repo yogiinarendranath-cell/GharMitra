@@ -6,13 +6,14 @@ export interface ApplyCouponProps {
   originalAmount: number;
   initialCoupon?: { code: string; discount: number } | null;
   paid: boolean;
+  initialCode?: string;
   onChange: (state: { code: string | null; discount: number; newAmount: number }) => void;
 }
 
 export default function ApplyCoupon({
-  bookingId, originalAmount, initialCoupon, paid, onChange,
+  bookingId, originalAmount, initialCoupon, paid, initialCode, onChange,
 }: ApplyCouponProps) {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode ?? "");
   const [applied, setApplied] = useState(initialCoupon ?? null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
