@@ -122,6 +122,34 @@ export type CouponAnalyticsDto = {
   topCoupons: TopCouponDto[];
 };
 
+
+// ───── Referral types (admin) ─────
+export type AdminReferralListDto = {
+  id: string;
+  referrerName: string;
+  referrerEmail: string;
+  referralCode: string;
+  refereeName: string | null;
+  refereeEmail: string | null;
+  isRedeemed: boolean;
+  redeemedAtUtc: string | null;
+  referrerReward: number;
+  createdAtUtc: string;
+};
+
+export type TopReferrerDto = {
+  fullName: string;
+  referralCode: string;
+  successfulReferrals: number;
+  totalEarned: number;
+};
+
+export type ReferralAdminStatsDto = {
+  totalReferrals: number;
+  redeemedReferrals: number;
+  totalRewardsPaid: number;
+  topReferrers: TopReferrerDto[];
+};
 export const tokenKey = "gm_admin_token";
 
 export function setToken(t: string | null) {
@@ -177,7 +205,9 @@ export const adminApi = {
     const qs = q.toString();
     return request<CouponStatsDto>(`/api/admin/coupons/stats${qs ? "?" + qs : ""}`);
   },
-  couponAnalytics: (days = 30) => {
+    referrals: () => request<AdminReferralListDto[]>("/api/admin/referrals"),
+  referralStats: () => request<ReferralAdminStatsDto>("/api/admin/referrals/stats"),
+    couponAnalytics: (days = 30) => {
     return request<CouponAnalyticsDto>(`/api/admin/coupons/analytics?days=${days}`);
   },
 };

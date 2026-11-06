@@ -3,8 +3,9 @@ import "./App.css";
 import { adminApi, setToken, type AuthResponse, type BookingDto, type ProfessionalDto, type AnalyticsDto } from "./lib/api";
 import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
 import CouponsTab from "./CouponsTab";
+import ReferralsTab from "./ReferralsTab";
 
-type Tab = "analytics" | "bookings" | "professionals" | "coupons";
+type Tab = "analytics" | "bookings" | "professionals" | "coupons" | "referrals";
 
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
@@ -104,6 +105,8 @@ export default function App() {
         </div>
 
         {tab === "coupons" && <CouponsTab />}
+        
+        {tab === "referrals" && <ReferralsTab />}
 
         {tab === "analytics" && analytics && kpis && (
           <>
