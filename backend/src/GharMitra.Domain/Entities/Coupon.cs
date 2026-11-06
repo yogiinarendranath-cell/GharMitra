@@ -21,7 +21,9 @@ public class Coupon : BaseEntity
     public int? MaxTotalUses { get; set; }
     public int CurrentUses { get; set; }
     public int? MaxUsesPerCustomer { get; set; } = 1;
+
     public bool IsActive { get; set; } = true;
+    public bool FirstBookingOnly { get; set; } = false;
 
     public ICollection<CouponRedemption> Redemptions { get; set; } = new List<CouponRedemption>();
 }

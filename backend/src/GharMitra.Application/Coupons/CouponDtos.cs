@@ -10,18 +10,33 @@ public record CreateCouponRequest(
     DateTime? ValidFromUtc,
     DateTime? ValidUntilUtc,
     int? MaxTotalUses,
-    int? MaxUsesPerCustomer);
+    int? MaxUsesPerCustomer,
+    bool FirstBookingOnly = false);
 
 public record CouponDto(
-    Guid Id, string Code, string? Description,
-    string DiscountType, decimal DiscountValue, decimal? MaxDiscountAmount,
-    decimal MinOrderAmount, DateTime? ValidFromUtc, DateTime? ValidUntilUtc,
-    int? MaxTotalUses, int CurrentUses, int? MaxUsesPerCustomer,
-    bool IsActive, DateTime CreatedAtUtc);
+    Guid Id,
+    string Code,
+    string? Description,
+    string DiscountType,
+    decimal DiscountValue,
+    decimal? MaxDiscountAmount,
+    decimal MinOrderAmount,
+    DateTime? ValidFromUtc,
+    DateTime? ValidUntilUtc,
+    int? MaxTotalUses,
+    int CurrentUses,
+    int? MaxUsesPerCustomer,
+    bool IsActive,
+    DateTime CreatedAtUtc,
+    bool FirstBookingOnly = false);
 
 public record ApplyCouponRequest(string Code);
 
-public record ApplyCouponResponse(string Code, decimal DiscountApplied, decimal OriginalAmount, decimal NewAmount);
+public record ApplyCouponResponse(
+    string Code,
+    decimal DiscountApplied,
+    decimal OriginalAmount,
+    decimal NewAmount);
 
 public record CouponStatsDto(
     decimal TotalDiscountGiven,

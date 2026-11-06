@@ -33,7 +33,8 @@ public class CouponService : ICouponService
             ValidFromUtc = r.ValidFromUtc?.ToUniversalTime(),
             ValidUntilUtc = r.ValidUntilUtc?.ToUniversalTime(),
             MaxTotalUses = r.MaxTotalUses,
-            MaxUsesPerCustomer = r.MaxUsesPerCustomer ?? 1
+            MaxUsesPerCustomer = r.MaxUsesPerCustomer ?? 1,
+            FirstBookingOnly = r.FirstBookingOnly
         };
 
         _db.Coupons.Add(coupon);
@@ -49,7 +50,8 @@ public class CouponService : ICouponService
                 c.Id, c.Code, c.Description, c.DiscountType.ToString(),
                 c.DiscountValue, c.MaxDiscountAmount, c.MinOrderAmount,
                 c.ValidFromUtc, c.ValidUntilUtc, c.MaxTotalUses,
-                c.CurrentUses, c.MaxUsesPerCustomer, c.IsActive, c.CreatedAtUtc))
+                c.CurrentUses, c.MaxUsesPerCustomer, c.IsActive, c.CreatedAtUtc,
+                c.FirstBookingOnly))
             .ToListAsync(ct);
     }
 
@@ -79,8 +81,19 @@ public class CouponService : ICouponService
             throw new InvalidOperationException("This coupon has expired.");
         if (coupon.MaxTotalUses.HasValue && coupon.CurrentUses >= coupon.MaxTotalUses.Value)
             throw new InvalidOperationException("This coupon has reached its total usage limit.");
+
+        if (coupon.FirstBookingOnly)
+        {
+            var hasAnyPriorPaidBooking = await _db.Bookings
+                .AnyAsync(b => b.CustomerId == customer.Id
+                               && b.PaymentStatus == PaymentStatus.Paid
+                               && b.Id != booking.Id, ct);
+            if (hasAnyPriorPaidBooking)
+                throw new InvalidOperationException("This coupon is only valid for your first booking.");
+        }
+
         if (booking.TotalAmount < coupon.MinOrderAmount)
-            throw new InvalidOperationException($"Minimum order of â‚¹{coupon.MinOrderAmount} required.");
+            throw new InvalidOperationException($"Minimum order of \u20b9{coupon.MinOrderAmount} required.");
 
         if (coupon.MaxUsesPerCustomer.HasValue)
         {
@@ -132,6 +145,7 @@ public class CouponService : ICouponService
 
         await _db.SaveChangesAsync(ct);
     }
+
     public async Task<CouponStatsDto> GetStatsAsync(DateTime? fromUtc, DateTime? toUtc, CancellationToken ct = default)
     {
         var q = _db.CouponRedemptions.AsQueryable();
@@ -164,5 +178,6 @@ public class CouponService : ICouponService
         new(c.Id, c.Code, c.Description, c.DiscountType.ToString(),
             c.DiscountValue, c.MaxDiscountAmount, c.MinOrderAmount,
             c.ValidFromUtc, c.ValidUntilUtc, c.MaxTotalUses,
-            c.CurrentUses, c.MaxUsesPerCustomer, c.IsActive, c.CreatedAtUtc);
+            c.CurrentUses, c.MaxUsesPerCustomer, c.IsActive, c.CreatedAtUtc,
+            c.FirstBookingOnly);
 }
