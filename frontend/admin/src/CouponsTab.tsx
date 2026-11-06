@@ -6,6 +6,7 @@ const emptyForm: CreateCouponRequest = {
   maxDiscountAmount: null, minOrderAmount: 0,
   validFromUtc: null, validUntilUtc: null,
   maxTotalUses: null, maxUsesPerCustomer: 1,
+  firstBookingOnly: false,
 };
 
 function statusOf(c: CouponDto): { label: string; cls: string } {
@@ -127,6 +128,17 @@ export default function CouponsTab() {
             Max per customer
             <input type="number" min="1" value={form.maxUsesPerCustomer ?? 1} onChange={e => setForm({ ...form, maxUsesPerCustomer: Number(e.target.value) })} style={{ padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px" }} />
           </label>
+          <label style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px", fontSize: "0.85rem", gridColumn: "span 2", padding: "0.5rem", background: "#F9FAFB", borderRadius: "6px", border: "1px solid var(--border)" }}>
+            <input
+              type="checkbox"
+              checked={form.firstBookingOnly}
+              onChange={e => setForm({ ...form, firstBookingOnly: e.target.checked })}
+              style={{ width: "16px", height: "16px", cursor: "pointer" }}
+            />
+            <span>
+              <strong>First booking only</strong> — valid only for customers with zero prior paid bookings
+            </span>
+          </label>
         </div>
         <button type="submit" className="btn-primary" disabled={busy} style={{ padding: "0.7rem 1.5rem" }}>
           {busy ? "Creating…" : "Create coupon"}
@@ -157,7 +169,15 @@ export default function CouponsTab() {
                   const s = statusOf(c);
                   return (
                     <tr key={c.id} style={{ borderTop: "1px solid var(--border)" }}>
-                      <td><strong>{c.code}</strong>{c.description && <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{c.description}</div>}</td>
+                      <td>
+                        <strong>{c.code}</strong>
+                        {c.firstBookingOnly && (
+                          <span className="badge badge-assigned" style={{ marginLeft: "6px", fontSize: "0.7rem" }}>
+                            1st only
+                          </span>
+                        )}
+                        {c.description && <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{c.description}</div>}
+                      </td>
                       <td>{c.discountType}</td>
                       <td>{c.discountType === "Percentage" ? `${c.discountValue}%` : `₹${c.discountValue}`}{c.maxDiscountAmount ? ` (max ₹${c.maxDiscountAmount})` : ""}</td>
                       <td align="right">₹{c.minOrderAmount}</td>
