@@ -142,4 +142,14 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify({ notes: notes ?? null }),
     }),
+  coupons: () => request<CouponDto[]>("/api/admin/coupons"),
+  createCoupon: (body: CreateCouponRequest) =>
+    request<CouponDto>("/api/admin/coupons", { method: "POST", body: JSON.stringify(body) }),
+  couponStats: (fromUtc?: string, toUtc?: string) => {
+    const q = new URLSearchParams();
+    if (fromUtc) q.set("fromUtc", fromUtc);
+    if (toUtc) q.set("toUtc", toUtc);
+    const qs = q.toString();
+    return request<CouponStatsDto>(`/api/admin/coupons/stats${qs ? "?" + qs : ""}`);
+  },
 };
