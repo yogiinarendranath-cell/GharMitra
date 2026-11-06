@@ -78,6 +78,7 @@ public class BookingsController : ControllerBase
 
     // ----- COUPON ENDPOINTS -----
 
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("coupon-attempts")]
     [HttpPost("{id:guid}/apply-coupon")]
     public async Task<ActionResult<CouponApplyResponse>> ApplyCoupon(
         Guid id, ApplyCouponRequest request,

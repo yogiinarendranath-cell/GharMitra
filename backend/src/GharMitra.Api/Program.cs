@@ -109,7 +109,12 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<GharMitraDbContext>();
+    var runMigrations = Environment.GetEnvironmentVariable("MIGRATIONS_ENABLED")
+    ?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
+if (runMigrations)
+{
     await db.Database.MigrateAsync();
+}
     await DbSeeder.SeedAsync(db);
 }
 
