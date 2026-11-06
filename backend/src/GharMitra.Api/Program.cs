@@ -82,8 +82,26 @@ builder.Services.AddRateLimiter(o =>
     {
         opt.PermitLimit = authPermit;
         opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueLimit = 0;
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    
+    // Coupon attempts rate limit — 10 per minute per customer
+    o.AddPolicy("coupon-attempts", httpContext =>
+    {
+        var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                     ?? "anonymous";
+        return System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: userId,
+            factory: _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
     });
 });
 
