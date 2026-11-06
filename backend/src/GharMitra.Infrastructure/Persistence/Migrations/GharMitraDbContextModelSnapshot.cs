@@ -283,6 +283,12 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<bool>("HasBeenReferred")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ReferralCode")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -352,6 +358,58 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Professionals");
+                });
+
+            modelBuilder.Entity("GharMitra.Domain.Entities.Referral", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRedeemed")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("RedeemedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RefereeCouponId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RefereeCustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("RefereeDiscount")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("RefereeEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReferralCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ReferrerCouponId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReferrerCustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("ReferrerReward")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RefereeCustomerId");
+
+                    b.HasIndex("ReferrerCustomerId");
+
+                    b.ToTable("Referrals");
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Review", b =>
@@ -627,6 +685,23 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GharMitra.Domain.Entities.Referral", b =>
+                {
+                    b.HasOne("GharMitra.Domain.Entities.Customer", "RefereeCustomer")
+                        .WithMany()
+                        .HasForeignKey("RefereeCustomerId");
+
+                    b.HasOne("GharMitra.Domain.Entities.Customer", "ReferrerCustomer")
+                        .WithMany()
+                        .HasForeignKey("ReferrerCustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RefereeCustomer");
+
+                    b.Navigation("ReferrerCustomer");
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Review", b =>

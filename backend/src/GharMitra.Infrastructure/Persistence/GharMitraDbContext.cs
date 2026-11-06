@@ -19,6 +19,7 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<CouponRedemption> CouponRedemptions => Set<CouponRedemption>();
+    public DbSet<Referral> Referrals => Set<Referral>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -52,6 +53,8 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
         {
             e.Property(x => x.City).HasMaxLength(100);
             e.Property(x => x.DefaultAddress).HasMaxLength(500);
+            e.HasIndex(x => x.ReferralCode).IsUnique();
+            e.Property(x => x.ReferralCode).HasMaxLength(50);
         });
 
         b.Entity<Professional>(e =>
@@ -81,6 +84,8 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
             e.HasIndex(x => x.BookingNumber).IsUnique();
             e.Property(x => x.BookingNumber).HasMaxLength(40).IsRequired();
             e.Property(x => x.TotalAmount).HasPrecision(10, 2);
+            e.Property(x => x.OriginalAmount).HasPrecision(10, 2);
+            e.Property(x => x.DiscountAmount).HasPrecision(10, 2);
             e.Property(x => x.AddressLine).HasMaxLength(500);
             e.Property(x => x.City).HasMaxLength(100);
             e.Property(x => x.CancellationReason).HasMaxLength(500);
@@ -128,6 +133,7 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
         b.Entity<CouponRedemption>(e =>
         {
             e.HasIndex(x => new { x.CouponId, x.BookingId }).IsUnique();
+            e.HasIndex(x => x.CreatedAtUtc);
             e.Property(x => x.DiscountApplied).HasPrecision(10, 2);
             e.HasOne(x => x.Coupon).WithMany(c => c.Redemptions)
                 .HasForeignKey(x => x.CouponId).OnDelete(DeleteBehavior.Cascade);
@@ -137,10 +143,19 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
                 .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
         });
 
-        b.Entity<Booking>(e =>
+        b.Entity<Referral>(e =>
         {
-            e.Property(x => x.OriginalAmount).HasPrecision(10, 2);
-            e.Property(x => x.DiscountAmount).HasPrecision(10, 2);
+            e.HasIndex(x => x.ReferralCode).IsUnique();
+            e.HasIndex(x => x.ReferrerCustomerId);
+            e.HasIndex(x => x.RefereeCustomerId);
+            e.Property(x => x.ReferralCode).HasMaxLength(50).IsRequired();
+            e.Property(x => x.RefereeEmail).HasMaxLength(200);
+            e.Property(x => x.RefereeDiscount).HasPrecision(10, 2);
+            e.Property(x => x.ReferrerReward).HasPrecision(10, 2);
+            e.HasOne(x => x.ReferrerCustomer).WithMany()
+                .HasForeignKey(x => x.ReferrerCustomerId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.RefereeCustomer).WithMany()
+                .HasForeignKey(x => x.RefereeCustomerId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 }
