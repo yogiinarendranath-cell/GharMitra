@@ -76,6 +76,7 @@ export type CouponDto = {
   maxUsesPerCustomer: number | null;
   isActive: boolean;
   createdAtUtc: string;
+  firstBookingOnly: boolean;
 };
 
 export type CreateCouponRequest = {
@@ -89,6 +90,7 @@ export type CreateCouponRequest = {
   validUntilUtc: string | null;
   maxTotalUses: number | null;
   maxUsesPerCustomer: number | null;
+  firstBookingOnly: boolean;
 };
 
 export type CouponStatsDto = {
