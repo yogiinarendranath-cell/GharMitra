@@ -33,6 +33,9 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<Guid?>("AppliedCouponId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("BookingNumber")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -56,6 +59,10 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("integer");
 
@@ -67,6 +74,10 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Notes")
                         .HasColumnType("text");
+
+                    b.Property<decimal>("OriginalAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<int>("PaymentStatus")
                         .HasColumnType("integer");
@@ -99,6 +110,8 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppliedCouponId");
 
                     b.HasIndex("BookingNumber")
                         .IsUnique();
@@ -148,6 +161,105 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProfessionalId");
 
                     b.ToTable("BookingAssignments");
+                });
+
+            modelBuilder.Entity("GharMitra.Domain.Entities.Coupon", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentUses")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<int?>("MaxTotalUses")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaxUsesPerCustomer")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("MinOrderAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ValidFromUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ValidUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Coupons");
+                });
+
+            modelBuilder.Entity("GharMitra.Domain.Entities.CouponRedemption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CouponId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("DiscountApplied")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("CouponId", "BookingId")
+                        .IsUnique();
+
+                    b.ToTable("CouponRedemptions");
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Customer", b =>
@@ -423,6 +535,10 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Booking", b =>
                 {
+                    b.HasOne("GharMitra.Domain.Entities.Coupon", "AppliedCoupon")
+                        .WithMany()
+                        .HasForeignKey("AppliedCouponId");
+
                     b.HasOne("GharMitra.Domain.Entities.Customer", "Customer")
                         .WithMany("Bookings")
                         .HasForeignKey("CustomerId")
@@ -434,6 +550,8 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("AppliedCoupon");
 
                     b.Navigation("Customer");
 
@@ -457,6 +575,33 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Navigation("Booking");
 
                     b.Navigation("Professional");
+                });
+
+            modelBuilder.Entity("GharMitra.Domain.Entities.CouponRedemption", b =>
+                {
+                    b.HasOne("GharMitra.Domain.Entities.Booking", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GharMitra.Domain.Entities.Coupon", "Coupon")
+                        .WithMany("Redemptions")
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GharMitra.Domain.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Coupon");
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Customer", b =>
@@ -522,6 +667,11 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("GharMitra.Domain.Entities.Booking", b =>
                 {
                     b.Navigation("Assignment");
+                });
+
+            modelBuilder.Entity("GharMitra.Domain.Entities.Coupon", b =>
+                {
+                    b.Navigation("Redemptions");
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Customer", b =>

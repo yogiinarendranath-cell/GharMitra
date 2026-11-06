@@ -1,3 +1,4 @@
+using GharMitra.Domain.Entities;
 using GharMitra.Application.Common.Interfaces;
 using GharMitra.Application.Payments;
 using GharMitra.Domain.Enums;
