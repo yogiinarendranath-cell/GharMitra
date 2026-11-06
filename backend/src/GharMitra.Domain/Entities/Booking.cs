@@ -33,4 +33,10 @@ public class Booking : BaseEntity
     public string? CancellationReason { get; set; }
 
     public BookingAssignment? Assignment { get; set; }
+
+    // Coupon tracking
+    public Guid? AppliedCouponId { get; set; }
+    public Coupon? AppliedCoupon { get; set; }
+    public decimal? DiscountAmount { get; set; }
+    public decimal OriginalAmount { get; set; }
 }

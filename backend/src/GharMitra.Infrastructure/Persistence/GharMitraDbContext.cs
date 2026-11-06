@@ -17,6 +17,8 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
     public DbSet<Booking> Bookings => Set<Booking>();
     public DbSet<BookingAssignment> BookingAssignments => Set<BookingAssignment>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<CouponRedemption> CouponRedemptions => Set<CouponRedemption>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -111,6 +113,34 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
                 .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Professional).WithMany()
                 .HasForeignKey(x => x.ProfessionalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<Coupon>(e =>
+        {
+            e.HasIndex(x => x.Code).IsUnique();
+            e.Property(x => x.Code).HasMaxLength(50).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(500);
+            e.Property(x => x.DiscountValue).HasPrecision(10, 2);
+            e.Property(x => x.MaxDiscountAmount).HasPrecision(10, 2);
+            e.Property(x => x.MinOrderAmount).HasPrecision(10, 2);
+        });
+
+        b.Entity<CouponRedemption>(e =>
+        {
+            e.HasIndex(x => new { x.CouponId, x.BookingId }).IsUnique();
+            e.Property(x => x.DiscountApplied).HasPrecision(10, 2);
+            e.HasOne(x => x.Coupon).WithMany(c => c.Redemptions)
+                .HasForeignKey(x => x.CouponId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Booking).WithMany()
+                .HasForeignKey(x => x.BookingId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Customer).WithMany()
+                .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<Booking>(e =>
+        {
+            e.Property(x => x.OriginalAmount).HasPrecision(10, 2);
+            e.Property(x => x.DiscountAmount).HasPrecision(10, 2);
         });
     }
 }

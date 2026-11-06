@@ -107,6 +107,23 @@ public class PaymentService : IPaymentService
         booking.RazorpayPaymentId = request.RazorpayPaymentId;
         booking.UpdatedAtUtc = DateTime.UtcNow;
 
+        // Coupon redemption
+        if (booking.AppliedCouponId.HasValue && booking.DiscountAmount.HasValue && booking.DiscountAmount > 0)
+        {
+            var coupon = await _db.Coupons.FirstOrDefaultAsync(c => c.Id == booking.AppliedCouponId.Value, ct);
+            if (coupon != null)
+            {
+                _db.CouponRedemptions.Add(new CouponRedemption
+                {
+                    CouponId = coupon.Id,
+                    BookingId = booking.Id,
+                    CustomerId = booking.CustomerId,
+                    DiscountApplied = booking.DiscountAmount.Value
+                });
+                coupon.CurrentUses += 1;
+            }
+        }
+
         await _db.SaveChangesAsync(ct);
         return true;
     }

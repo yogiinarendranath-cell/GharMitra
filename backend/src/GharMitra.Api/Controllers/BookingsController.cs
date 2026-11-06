@@ -2,6 +2,7 @@ using System.Security.Claims;
 using GharMitra.Application.Bookings;
 using GharMitra.Application.Payments;
 using GharMitra.Application.Reviews;
+using GharMitra.Application.Coupons;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -74,4 +75,31 @@ public class BookingsController : ControllerBase
         try { return Ok(await _reviews.SubmitReviewAsync(CurrentUserId, id, request, ct)); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
+
+    // ----- COUPON ENDPOINTS -----
+
+    [HttpPost("{id:guid}/apply-coupon")]
+    public async Task<ActionResult<CouponApplyResponse>> ApplyCoupon(
+        Guid id, ApplyCouponRequest request,
+        [FromServices] GharMitra.Application.Coupons.ICouponService coupons,
+        CancellationToken ct)
+    {
+        try
+        {
+            var result = await coupons.ApplyToBookingAsync(CurrentUserId, id, request.Code, ct);
+            return Ok(new { couponCode = result.Code, discountApplied = result.DiscountApplied, originalAmount = result.OriginalAmount, newAmount = result.NewAmount });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpDelete("{id:guid}/apply-coupon")]
+    public async Task<IActionResult> RemoveCoupon(Guid id,
+        [FromServices] GharMitra.Application.Coupons.ICouponService coupons,
+        CancellationToken ct)
+    {
+        try { await coupons.RemoveFromBookingAsync(CurrentUserId, id, ct); return NoContent(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 }
+
+public record CouponApplyResponse(string CouponCode, decimal DiscountApplied, decimal OriginalAmount, decimal NewAmount);

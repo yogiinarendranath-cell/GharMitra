@@ -56,4 +56,22 @@ public class AdminController : ControllerBase
     {
         return Ok(await analytics.GetAnalyticsAsync(ct));
     }
+
+    // ----- COUPON MANAGEMENT -----
+
+    [HttpGet("coupons")]
+    public async Task<ActionResult<List<GharMitra.Application.Coupons.CouponDto>>> GetCoupons(
+        [FromServices] GharMitra.Application.Coupons.ICouponService coupons,
+        CancellationToken ct)
+        => Ok(await coupons.GetAllAsync(ct));
+
+    [HttpPost("coupons")]
+    public async Task<ActionResult<GharMitra.Application.Coupons.CouponDto>> CreateCoupon(
+        GharMitra.Application.Coupons.CreateCouponRequest request,
+        [FromServices] GharMitra.Application.Coupons.ICouponService coupons,
+        CancellationToken ct)
+    {
+        try { return Ok(await coupons.CreateAsync(request, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 }
