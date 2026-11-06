@@ -110,4 +110,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  applyCoupon: (bookingId: string, code: string) =>
+    request<{ couponCode: string; discountApplied: number; originalAmount: number; newAmount: number }>(
+      `/api/bookings/${bookingId}/apply-coupon`,
+      { method: "POST", body: JSON.stringify({ code }) }
+    ),
+  removeCoupon: (bookingId: string) =>
+    request<void>(`/api/bookings/${bookingId}/apply-coupon`, { method: "DELETE" }),
 };
