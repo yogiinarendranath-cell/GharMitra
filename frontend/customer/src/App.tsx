@@ -34,7 +34,7 @@ export default function App() {
   const [city, setCity] = useState("Pune");
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
-  // Read `?code=WELCOME50` from URL — auto-fills coupon at checkout
+  // Read `?code=WELCOME50` from URL ΓÇö auto-fills coupon at checkout
   const [initialPromoCode] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     const params = new URLSearchParams(window.location.search);
@@ -114,7 +114,7 @@ export default function App() {
     try {
       const order = await api.payBooking(b.id);
       if (order.isMock) {
-        if (!confirm(`[MOCK MODE] Simulate successful payment of ₹${order.amount}?`)) return;
+        if (!confirm(`[MOCK MODE] Simulate successful payment of Γé╣${order.amount}?`)) return;
         await api.verifyPayment(b.id, { razorpayOrderId: order.orderId, razorpayPaymentId: `pay_mock_${Date.now()}`, razorpaySignature: "mock_signature" });
         setBookings(await api.myBookings());
       }
@@ -144,7 +144,7 @@ export default function App() {
   if (!session) {
     return (
       <div className="app-container">
-        <header className="app-header"><div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav"><button className="btn-outline" onClick={() => setMode("login")}>Sign In</button></div></div></header>
+        <header className="app-header"><div className="header-inner"><a href="#" className="logo">≡ƒÅá GharMitra</a><div className="header-nav"><button className="btn-outline" onClick={() => setMode("login")}>Sign In</button></div></div></header>
         <main>
           <div className="hero-main">
             <h1>Get House Help in 10 min</h1>
@@ -178,7 +178,7 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="header-inner"><a href="#" className="logo">🏠 GharMitra</a><div className="header-nav" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div className="header-inner"><a href="#" className="logo">≡ƒÅá GharMitra</a><div className="header-nav" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div style={{
               width: "40px", height: "40px", borderRadius: "50%",
               background: "var(--primary)", color: "white",
@@ -200,7 +200,7 @@ export default function App() {
           </div></div>
       </header>
       <main>
-        {live && <div className="live-bar">📡 Live: {live}</div>}
+        {live && <div className="live-bar">≡ƒôí Live: {live}</div>}
         <h2 style={{ marginBottom: "1.5rem" }}>Our Services</h2>
         <div className="service-grid-full">
           {catalog.flatMap(c => c.services).map(s => (
@@ -208,7 +208,7 @@ export default function App() {
               <img src={SERVICE_IMAGES[s.name] || DEFAULT_IMAGE} alt={s.name} />
               <div className="service-card-overlay">
                 <h3>{s.name}</h3>
-                <p>From ₹{s.basePrice} • {s.durationMinutes} min</p>
+                <p>From Γé╣{s.basePrice} ΓÇó {s.durationMinutes} min</p>
                 <button className="btn-primary" style={{ marginTop: "10px", width: "100%", padding: "0.6rem" }} onClick={() => {
                   setSelectedService(s);
                   const future = new Date(Date.now() + 2 * 3600_000);
@@ -227,7 +227,7 @@ export default function App() {
             <div key={b.id} className="booking-item">
               <div className="booking-info">
                 <h4>{b.serviceName}</h4>
-                <div className="booking-meta">₹{b.totalAmount} • {new Date(b.scheduledStartUtc).toLocaleString()}</div>
+                <div className="booking-meta">Γé╣{b.totalAmount} ΓÇó {new Date(b.scheduledStartUtc).toLocaleString()}</div>
                 <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
                   <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
                   <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
@@ -258,7 +258,7 @@ export default function App() {
                   <button onClick={() => handlePay(b)} className="btn-primary btn-sm">Pay Now</button>
                 )}
                 {b.status === "Completed" && (
-                  <button onClick={() => setReviewBookingId(b.id)} className="btn-primary btn-sm">⭐ Rate Job</button>
+                  <button onClick={() => setReviewBookingId(b.id)} className="btn-primary btn-sm">Γ¡É Rate Job</button>
                 )}
                 {!["Completed", "Cancelled"].includes(b.status) && (
                   <button onClick={() => cancel(b)} className="btn-danger btn-sm">Cancel</button>
@@ -290,7 +290,7 @@ export default function App() {
                       color: star <= reviewRating ? "#F59E0B" : "#D1D5DB"
                     }}
                   >
-                    ★
+                    Γÿà
                   </button>
                 ))}
               </div>
@@ -319,12 +319,12 @@ export default function App() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
               <h2 style={{ margin: 0 }}>Book Service</h2>
-              <button style={{ background: "transparent", fontSize: "1.5rem", color: "var(--text-muted)", padding: 0 }} onClick={() => setSelectedService(null)}>×</button>
+              <button style={{ background: "transparent", fontSize: "1.5rem", color: "var(--text-muted)", padding: 0 }} onClick={() => setSelectedService(null)}>├ù</button>
             </div>
             <form onSubmit={submitBooking} style={{ display: "grid", gap: "1rem" }}>
               <div style={{ background: "#F9FAFB", padding: "1rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
                 <strong>{selectedService.name}</strong><br/>
-                <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>₹{selectedService.basePrice} • {selectedService.durationMinutes} mins</span>
+                <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Γé╣{selectedService.basePrice} ΓÇó {selectedService.durationMinutes} mins</span>
               </div>
               <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>Address</label><input value={address} onChange={e => setAddress(e.target.value)} required /></div>
               <div><label style={{ fontSize: "0.9rem", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>When?</label><input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} required /></div>
@@ -333,7 +333,7 @@ export default function App() {
           </div>
         </div>
       )}
-      <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div></div></footer>
+      <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">┬⌐ 2026 GharMitra. All rights reserved.</div></div></footer>
     </div>
   );
 }
