@@ -174,6 +174,72 @@ public class CouponService : ICouponService
         return new CouponStatsDto(totalDiscount, totalRedeemed, topCode, topUses);
     }
 
+    public async Task<CouponAnalyticsDto> GetAnalyticsAsync(int days, CancellationToken ct = default)
+    {
+        if (days < 1) days = 30;
+        if (days > 365) days = 365;
+
+        var sinceUtc = DateTime.UtcNow.AddDays(-days);
+
+        // 1. Redemptions in the window
+        var redemptions = await _db.CouponRedemptions
+            .Where(r => r.CreatedAtUtc >= sinceUtc)
+            .ToListAsync(ct);
+
+        var couponIds = redemptions.Select(r => r.CouponId).Distinct().ToList();
+        var couponCodeMap = await _db.Coupons
+            .Where(c => couponIds.Contains(c.Id))
+            .Select(c => new { c.Id, c.Code })
+            .ToDictionaryAsync(x => x.Id, x => x.Code, ct);
+
+        var totalDiscount = redemptions.Sum(r => r.DiscountApplied);
+        var totalRedemptions = redemptions.Count;
+
+        // 2. Daily trend
+        var dailyTrend = redemptions
+            .GroupBy(r => r.CreatedAtUtc.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new CouponDailyTrendDto(
+                g.Key.ToString("yyyy-MM-dd"),
+                g.Count(),
+                g.Sum(r => r.DiscountApplied)))
+            .ToList();
+
+        // 3. Top coupons
+        var topCoupons = redemptions
+            .Where(r => couponCodeMap.ContainsKey(r.CouponId))
+            .GroupBy(r => couponCodeMap[r.CouponId])
+            .Select(g => new TopCouponDto(
+                g.Key,
+                g.Count(),
+                g.Sum(r => r.DiscountApplied)))
+            .OrderByDescending(x => x.TotalDiscount)
+            .Take(5)
+            .ToList();
+
+        // 4. Conversion tracking
+        var appliedBookings = await _db.Bookings
+            .Where(b => b.AppliedCouponId != null && b.UpdatedAtUtc >= sinceUtc)
+            .Select(b => new { b.PaymentStatus })
+            .ToListAsync(ct);
+
+        var appliedAndPaid = appliedBookings.Count(b => b.PaymentStatus == PaymentStatus.Paid);
+        var appliedButNotPaid = appliedBookings.Count(b => b.PaymentStatus != PaymentStatus.Paid);
+
+        var conversionRate = appliedBookings.Count > 0
+            ? (double)appliedAndPaid / appliedBookings.Count
+            : 0.0;
+
+        return new CouponAnalyticsDto(
+            totalDiscount,
+            totalRedemptions,
+            Math.Round(conversionRate, 3),
+            appliedAndPaid,
+            appliedButNotPaid,
+            dailyTrend,
+            topCoupons);
+    }
+
     private static CouponDto ToDto(Coupon c) =>
         new(c.Id, c.Code, c.Description, c.DiscountType.ToString(),
             c.DiscountValue, c.MaxDiscountAmount, c.MinOrderAmount,

@@ -80,5 +80,11 @@ public class AdminController : ControllerBase
         DateTime? fromUtc = null, DateTime? toUtc = null,
         CancellationToken ct = default)
         => Ok(await coupons.GetStatsAsync(fromUtc, toUtc, ct));
+    [HttpGet("coupons/analytics")]
+    public async Task<ActionResult<GharMitra.Application.Coupons.CouponAnalyticsDto>> GetCouponAnalytics(
+        [FromServices] GharMitra.Application.Coupons.ICouponService coupons,
+        int days = 30,
+        CancellationToken ct = default)
+        => Ok(await coupons.GetAnalyticsAsync(days, ct));
 
 }

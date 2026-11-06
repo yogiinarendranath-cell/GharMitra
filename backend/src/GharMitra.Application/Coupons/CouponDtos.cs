@@ -43,3 +43,22 @@ public record CouponStatsDto(
     int TotalRedemptions,
     string? TopCouponCode,
     int TopCouponUses);
+
+public record CouponDailyTrendDto(
+    string Date,
+    int Redemptions,
+    decimal Discount);
+
+public record TopCouponDto(
+    string Code,
+    int Uses,
+    decimal TotalDiscount);
+
+public record CouponAnalyticsDto(
+    decimal TotalDiscountGiven,
+    int TotalRedemptions,
+    double ConversionRate,
+    int AppliedAndPaid,
+    int AppliedButNotPaid,
+    List<CouponDailyTrendDto> DailyTrend,
+    List<TopCouponDto> TopCoupons);
