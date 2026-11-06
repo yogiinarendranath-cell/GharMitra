@@ -15,13 +15,10 @@ public class CouponService : ICouponService
         var code = r.Code.Trim().ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(code))
             throw new InvalidOperationException("Coupon code is required.");
-
         if (await _db.Coupons.AnyAsync(c => c.Code == code, ct))
-            throw new InvalidOperationException($"Coupon code '{code}' already exists.");
-
+            throw new InvalidOperationException($"Coupon '{code}' already exists.");
         if (r.DiscountType is not (1 or 2))
             throw new InvalidOperationException("DiscountType must be 1 (Percentage) or 2 (FixedAmount).");
-
         if (r.DiscountValue <= 0)
             throw new InvalidOperationException("DiscountValue must be positive.");
 
@@ -49,12 +46,10 @@ public class CouponService : ICouponService
         return await _db.Coupons
             .OrderByDescending(c => c.CreatedAtUtc)
             .Select(c => new CouponDto(
-                c.Id, c.Code, c.Description,
-                c.DiscountType.ToString(),
+                c.Id, c.Code, c.Description, c.DiscountType.ToString(),
                 c.DiscountValue, c.MaxDiscountAmount, c.MinOrderAmount,
-                c.ValidFromUtc, c.ValidUntilUtc,
-                c.MaxTotalUses, c.CurrentUses, c.MaxUsesPerCustomer,
-                c.IsActive, c.CreatedAtUtc))
+                c.ValidFromUtc, c.ValidUntilUtc, c.MaxTotalUses,
+                c.CurrentUses, c.MaxUsesPerCustomer, c.IsActive, c.CreatedAtUtc))
             .ToListAsync(ct);
     }
 
@@ -69,65 +64,51 @@ public class CouponService : ICouponService
         if (booking.PaymentStatus == PaymentStatus.Paid)
             throw new InvalidOperationException("Cannot apply coupon to a paid booking.");
 
-        var normalizedCode = code.Trim().ToUpperInvariant();
-        var coupon = await _db.Coupons.FirstOrDefaultAsync(c => c.Code == normalizedCode, ct)
-            ?? throw new InvalidOperationException($"Coupon '{normalizedCode}' does not exist.");
+        if (booking.AppliedCouponId.HasValue)
+            throw new InvalidOperationException("A coupon is already applied. Remove it first.");
 
-        // Validation
+        var normalized = code.Trim().ToUpperInvariant();
+        var coupon = await _db.Coupons.FirstOrDefaultAsync(c => c.Code == normalized, ct)
+            ?? throw new InvalidOperationException($"Coupon '{normalized}' does not exist.");
+
         if (!coupon.IsActive)
             throw new InvalidOperationException("This coupon is no longer active.");
-
         if (coupon.ValidFromUtc.HasValue && coupon.ValidFromUtc.Value > DateTime.UtcNow)
             throw new InvalidOperationException("This coupon is not yet valid.");
-
         if (coupon.ValidUntilUtc.HasValue && coupon.ValidUntilUtc.Value < DateTime.UtcNow)
             throw new InvalidOperationException("This coupon has expired.");
-
         if (coupon.MaxTotalUses.HasValue && coupon.CurrentUses >= coupon.MaxTotalUses.Value)
-            throw new InvalidOperationException("This coupon has reached its usage limit.");
-
-        if (booking.OriginalAmount > 0 && booking.DiscountAmount.HasValue)
-            throw new InvalidOperationException("A coupon is already applied to this booking.");
-
+            throw new InvalidOperationException("This coupon has reached its total usage limit.");
         if (booking.TotalAmount < coupon.MinOrderAmount)
-            throw new InvalidOperationException($"This coupon requires a minimum order of ₹{coupon.MinOrderAmount}.");
+            throw new InvalidOperationException($"Minimum order of ₹{coupon.MinOrderAmount} required.");
 
-        // Check per-customer limit
         if (coupon.MaxUsesPerCustomer.HasValue)
         {
-            var customerUses = await _db.CouponRedemptions
+            var usedByCustomer = await _db.CouponRedemptions
                 .CountAsync(r => r.CouponId == coupon.Id && r.CustomerId == customer.Id, ct);
-            if (customerUses >= coupon.MaxUsesPerCustomer.Value)
+            if (usedByCustomer >= coupon.MaxUsesPerCustomer.Value)
                 throw new InvalidOperationException("You have already used this coupon the maximum number of times.");
         }
 
-        // Compute discount
-        var originalAmount = booking.OriginalAmount > 0 ? booking.OriginalAmount : booking.TotalAmount;
-        decimal discount;
-        if (coupon.DiscountType == CouponDiscountType.Percentage)
-        {
-            discount = Math.Round(originalAmount * (coupon.DiscountValue / 100m), 2);
-            if (coupon.MaxDiscountAmount.HasValue && discount > coupon.MaxDiscountAmount.Value)
-                discount = coupon.MaxDiscountAmount.Value;
-        }
-        else
-        {
-            discount = coupon.DiscountValue;
-        }
+        var original = booking.OriginalAmount > 0 ? booking.OriginalAmount : booking.TotalAmount;
+        decimal discount = coupon.DiscountType == CouponDiscountType.Percentage
+            ? Math.Round(original * (coupon.DiscountValue / 100m), 2)
+            : coupon.DiscountValue;
 
-        if (discount > originalAmount) discount = originalAmount;
-        var newAmount = Math.Round(originalAmount - discount, 2);
+        if (coupon.DiscountType == CouponDiscountType.Percentage && coupon.MaxDiscountAmount.HasValue)
+            discount = Math.Min(discount, coupon.MaxDiscountAmount.Value);
 
-        // Apply
-        booking.OriginalAmount = originalAmount;
+        if (discount > original) discount = original;
+        var newAmount = Math.Round(original - discount, 2);
+
+        booking.OriginalAmount = original;
         booking.DiscountAmount = discount;
         booking.TotalAmount = newAmount;
         booking.AppliedCouponId = coupon.Id;
         booking.UpdatedAtUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
-
-        return new ApplyCouponResponse(coupon.Code, discount, originalAmount, newAmount);
+        return new ApplyCouponResponse(coupon.Code, discount, original, newAmount);
     }
 
     public async Task RemoveFromBookingAsync(Guid customerUserId, Guid bookingId, CancellationToken ct = default)
@@ -140,9 +121,8 @@ public class CouponService : ICouponService
 
         if (booking.PaymentStatus == PaymentStatus.Paid)
             throw new InvalidOperationException("Cannot remove coupon from a paid booking.");
-
         if (!booking.DiscountAmount.HasValue)
-            throw new InvalidOperationException("No coupon is currently applied.");
+            throw new InvalidOperationException("No coupon currently applied.");
 
         booking.TotalAmount = booking.OriginalAmount;
         booking.DiscountAmount = null;
@@ -154,10 +134,8 @@ public class CouponService : ICouponService
     }
 
     private static CouponDto ToDto(Coupon c) =>
-        new(c.Id, c.Code, c.Description,
-            c.DiscountType.ToString(),
+        new(c.Id, c.Code, c.Description, c.DiscountType.ToString(),
             c.DiscountValue, c.MaxDiscountAmount, c.MinOrderAmount,
-            c.ValidFromUtc, c.ValidUntilUtc,
-            c.MaxTotalUses, c.CurrentUses, c.MaxUsesPerCustomer,
-            c.IsActive, c.CreatedAtUtc);
+            c.ValidFromUtc, c.ValidUntilUtc, c.MaxTotalUses,
+            c.CurrentUses, c.MaxUsesPerCustomer, c.IsActive, c.CreatedAtUtc);
 }
