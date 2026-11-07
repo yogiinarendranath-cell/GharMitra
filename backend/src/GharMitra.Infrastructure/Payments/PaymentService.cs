@@ -34,7 +34,12 @@ public class PaymentService : IPaymentService
         if (booking.PaymentStatus == PaymentStatus.Paid)
             throw new InvalidOperationException("Booking is already paid.");
 
-        bool isMock = string.IsNullOrWhiteSpace(_settings.KeyId) || _settings.KeyId.StartsWith("rzp_test_your");
+        // Dev bypass: accepts any signature when explicitly enabled.
+        // MUST be false in production.
+        bool allowMockSignature = _settings.AllowMockSignature;
+        bool isMock = allowMockSignature 
+            || string.IsNullOrWhiteSpace(_settings.KeyId) 
+            || _settings.KeyId.StartsWith("rzp_test_your");
         
         string orderId;
         if (isMock)
@@ -82,7 +87,12 @@ public class PaymentService : IPaymentService
         if (booking.RazorpayOrderId != request.RazorpayOrderId)
             throw new InvalidOperationException("Order ID mismatch.");
 
-        bool isMock = string.IsNullOrWhiteSpace(_settings.KeyId) || _settings.KeyId.StartsWith("rzp_test_your");
+        // Dev bypass: accepts any signature when explicitly enabled.
+        // MUST be false in production.
+        bool allowMockSignature = _settings.AllowMockSignature;
+        bool isMock = allowMockSignature 
+            || string.IsNullOrWhiteSpace(_settings.KeyId) 
+            || _settings.KeyId.StartsWith("rzp_test_your");
 
         if (!isMock)
         {
