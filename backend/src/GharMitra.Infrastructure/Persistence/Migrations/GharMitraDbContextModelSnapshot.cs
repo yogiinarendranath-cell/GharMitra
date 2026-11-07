@@ -93,6 +93,15 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<decimal?>("RefundAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("RefundReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RefundedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("ScheduledStartUtc")
                         .HasColumnType("timestamp with time zone");
 

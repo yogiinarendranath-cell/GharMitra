@@ -1,5 +1,3 @@
-using GharMitra.Domain.Enums;
-
 namespace GharMitra.Application.Bookings;
 
 public record CreateBookingRequest(
@@ -25,8 +23,17 @@ public record BookingDto(
     string Status,
     string PaymentStatus,
     string? ProfessionalName,
-    double? ProfessionalLatitude,
-    double? ProfessionalLongitude);
+    double? ProfessionalLatitude = null,
+    double? ProfessionalLongitude = null,
+    decimal? RefundAmount = null,
+    DateTime? RefundedAtUtc = null,
+    string? RefundReason = null);
+
+public record RefundResultDto(
+    bool Success,
+    decimal AmountRefunded,
+    string Reason,
+    string Message);
 
 public record AssignBookingRequest(Guid ProfessionalId);
 

@@ -34,6 +34,11 @@ public class Booking : BaseEntity
 
     public BookingAssignment? Assignment { get; set; }
 
+    // Refund tracking
+    public decimal? RefundAmount { get; set; }
+    public DateTime? RefundedAtUtc { get; set; }
+    public string? RefundReason { get; set; }
+
     // Coupon tracking
     public Guid? AppliedCouponId { get; set; }
     public Coupon? AppliedCoupon { get; set; }

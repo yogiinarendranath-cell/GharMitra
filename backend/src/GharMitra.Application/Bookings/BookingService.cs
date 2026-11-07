@@ -10,11 +10,16 @@ public class BookingService : IBookingService
 {
     private readonly IApplicationDbContext _db;
     private readonly IBookingNotifier _notifier;
+    private readonly IPaymentGatewayService _payments;
 
-    public BookingService(IApplicationDbContext db, IBookingNotifier notifier)
+    public BookingService(
+        IApplicationDbContext db,
+        IBookingNotifier notifier,
+        IPaymentGatewayService payments)
     {
         _db = db;
         _notifier = notifier;
+        _payments = payments;
     }
 
     public async Task<BookingDto> CreateAsync(Guid customerUserId, CreateBookingRequest r, CancellationToken ct = default)
@@ -160,6 +165,74 @@ public class BookingService : IBookingService
             booking.Assignment?.Professional.User.FullName,
             booking.Assignment?.Professional.Latitude,
             booking.Assignment?.Professional.Longitude);
+    }
+
+    public async Task<RefundResultDto> RefundAsync(
+        Guid customerUserId,
+        Guid bookingId,
+        string reason,
+        CancellationToken ct = default)
+    {
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.UserId == customerUserId, ct)
+            ?? throw new InvalidOperationException("Customer not found.");
+
+        var booking = await _db.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == customer.Id, ct)
+            ?? throw new InvalidOperationException("Booking not found.");
+
+        if (booking.PaymentStatus != PaymentStatus.Paid)
+            return new RefundResultDto(false, 0, "not_paid",
+                "Cannot refund a booking that hasn't been paid.");
+
+        if (booking.RefundedAtUtc.HasValue)
+            return new RefundResultDto(false, 0, "already_refunded",
+                $"This booking was already refunded on {booking.RefundedAtUtc.Value:MMM dd, yyyy}.");
+
+        var hoursUntilService = (booking.ScheduledStartUtc - DateTime.UtcNow).TotalHours;
+
+        decimal refundPercent;
+        string refundReasonLabel;
+
+        if (hoursUntilService >= 24)
+        {
+            refundPercent = 1.0m;
+            refundReasonLabel = "Full refund (more than 24h before service)";
+        }
+        else if (hoursUntilService > 0)
+        {
+            refundPercent = 0.5m;
+            refundReasonLabel = "50% refund (less than 24h before service)";
+        }
+        else
+        {
+            return new RefundResultDto(false, 0, "service_started",
+                "Cannot refund after the service has started. Contact support.");
+        }
+
+        var refundAmount = Math.Round(booking.TotalAmount * refundPercent, 2);
+
+        if (string.IsNullOrEmpty(booking.RazorpayPaymentId))
+            return new RefundResultDto(false, 0, "no_payment_id",
+                "No payment record found for this booking.");
+
+        var refundId = await _payments.RefundAsync(
+            booking.RazorpayPaymentId,
+            refundAmount,
+            reason,
+            ct);
+
+        if (refundId == null)
+            return new RefundResultDto(false, 0, "razorpay_failed",
+                "Refund could not be processed by Razorpay. Please contact support.");
+
+        booking.RefundAmount = refundAmount;
+        booking.RefundedAtUtc = DateTime.UtcNow;
+        booking.RefundReason = $"{reason} ({refundReasonLabel}) — Razorpay refund ID: {refundId}";
+        booking.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        return new RefundResultDto(true, refundAmount, "success",
+            $"₹{refundAmount} refunded successfully. {refundReasonLabel}.");
     }
 
     public Task<List<AdminProfessionalDto>> GetProfessionalsAsync(CancellationToken ct = default) =>

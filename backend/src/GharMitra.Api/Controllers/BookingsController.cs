@@ -1,8 +1,7 @@
 using System.Security.Claims;
 using GharMitra.Application.Bookings;
-using GharMitra.Application.Payments;
-using GharMitra.Application.Reviews;
 using GharMitra.Application.Coupons;
+using GharMitra.Application.Payments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,17 +13,12 @@ namespace GharMitra.Api.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookings;
-    private readonly IPaymentService _payments;
-    private readonly IReviewService _reviews;
+    public BookingsController(IBookingService bookings) => _bookings = bookings;
 
-    public BookingsController(IBookingService bookings, IPaymentService payments, IReviewService reviews)
-    {
-        _bookings = bookings;
-        _payments = payments;
-        _reviews = reviews;
-    }
+    private Guid CurrentUserId =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    private Guid CurrentUserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    // ───── CORE BOOKING ENDPOINTS ─────
 
     [HttpPost]
     public async Task<ActionResult<BookingDto>> Create(CreateBookingRequest request, CancellationToken ct)
@@ -44,64 +38,95 @@ public class BookingsController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
-    [HttpPost("{id:guid}/pay")]
-    public async Task<ActionResult<PaymentOrderDto>> Pay(Guid id, CancellationToken ct)
-    {
-        try { return Ok(await _payments.CreateOrderAsync(CurrentUserId, id, ct)); }
-        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-    }
-
-    [HttpPost("{id:guid}/verify-payment")]
-    public async Task<IActionResult> VerifyPayment(Guid id, VerifyPaymentRequest request, CancellationToken ct)
-    {
-        try
-        {
-            await _payments.VerifyPaymentAsync(CurrentUserId, id, request, ct);
-            return Ok(new { message = "Payment verified successfully." });
-        }
-        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-    }
-
-    [HttpGet("{id:guid}/can-review")]
-    public async Task<IActionResult> CanReview(Guid id, CancellationToken ct)
-    {
-        var canReview = await _reviews.CanReviewAsync(CurrentUserId, id, ct);
-        return Ok(new { canReview });
-    }
-
-    [HttpPost("{id:guid}/reviews")]
-    public async Task<ActionResult<ReviewDto>> SubmitReview(Guid id, CreateReviewRequest request, CancellationToken ct)
-    {
-        try { return Ok(await _reviews.SubmitReviewAsync(CurrentUserId, id, request, ct)); }
-        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-    }
-
-    // ----- COUPON ENDPOINTS -----
+    // ───── COUPON ENDPOINTS ─────
 
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("coupon-attempts")]
-
     [HttpPost("{id:guid}/apply-coupon")]
     public async Task<ActionResult<CouponApplyResponse>> ApplyCoupon(
-        Guid id, ApplyCouponRequest request,
-        [FromServices] GharMitra.Application.Coupons.ICouponService coupons,
+        Guid id,
+        [FromBody] ApplyCouponRequest request,
+        [FromServices] ICouponService coupons,
         CancellationToken ct)
     {
         try
         {
-            var result = await coupons.ApplyToBookingAsync(CurrentUserId, id, request.Code, ct);
-            return Ok(new { couponCode = result.Code, discountApplied = result.DiscountApplied, originalAmount = result.OriginalAmount, newAmount = result.NewAmount });
+            var r = await coupons.ApplyToBookingAsync(CurrentUserId, id, request.Code, ct);
+            return Ok(new CouponApplyResponse(r.Code, r.DiscountApplied, r.OriginalAmount, r.NewAmount));
         }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
     [HttpDelete("{id:guid}/apply-coupon")]
-    public async Task<IActionResult> RemoveCoupon(Guid id,
-        [FromServices] GharMitra.Application.Coupons.ICouponService coupons,
+    public async Task<IActionResult> RemoveCoupon(
+        Guid id,
+        [FromServices] ICouponService coupons,
         CancellationToken ct)
     {
         try { await coupons.RemoveFromBookingAsync(CurrentUserId, id, ct); return NoContent(); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
+
+    // ───── PAYMENT ENDPOINTS ─────
+
+    [HttpPost("{id:guid}/pay")]
+    public async Task<ActionResult<PaymentOrderDto>> Pay(
+        Guid id,
+        [FromServices] IPaymentService payments,
+        CancellationToken ct)
+    {
+        try
+        {
+            var result = await payments.CreateOrderAsync(CurrentUserId, id, ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("{id:guid}/verify-payment")]
+    public async Task<IActionResult> VerifyPayment(
+        Guid id,
+        [FromBody] VerifyPaymentRequest request,
+        [FromServices] IPaymentService payments,
+        CancellationToken ct)
+    {
+        try
+        {
+            var verified = await payments.VerifyPaymentAsync(CurrentUserId, id, request, ct);
+            return Ok(new { success = verified });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    // ───── REFUND ENDPOINT ─────
+
+    [HttpPost("{id:guid}/refund")]
+    public async Task<ActionResult<RefundResultDto>> Refund(
+        Guid id,
+        [FromBody] RefundRequest request,
+        CancellationToken ct)
+    {
+        try
+        {
+            var result = await _bookings.RefundAsync(CurrentUserId, id, request.Reason, ct);
+            if (!result.Success)
+                return BadRequest(result);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new RefundResultDto(false, 0, "error", ex.Message));
+        }
+    }
 }
 
-public record CouponApplyResponse(string CouponCode, decimal DiscountApplied, decimal OriginalAmount, decimal NewAmount);
+// ───── LOCAL REQUEST/RESPONSE RECORDS ─────
+// Note: VerifyPaymentRequest is defined in GharMitra.Application.Payments
+// (reused here, not duplicated)
+
+public record RefundRequest(string Reason);
+
+public record CouponApplyResponse(
+    string CouponCode,
+    decimal DiscountApplied,
+    decimal OriginalAmount,
+    decimal NewAmount);

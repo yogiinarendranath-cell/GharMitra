@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.Configure<JwtSettings>(config.GetSection("Jwt"));
         services.Configure<RazorpaySettings>(config.GetSection("Razorpay"));
         services.AddScoped<GharMitra.Application.Payments.IPaymentService, GharMitra.Infrastructure.Payments.PaymentService>();
+        services.AddHttpClient<GharMitra.Application.Common.Interfaces.IPaymentGatewayService, GharMitra.Infrastructure.Payments.RazorpayService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IEmailService, Services.EmailService>();
         services.AddScoped<ISmsService, Services.SmsService>();
