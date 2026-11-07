@@ -87,7 +87,8 @@ export default function App() {
       <header className="app-header">
         <div className="header-inner">
           <a href="#" className="logo">🏠 GharMitra Admin</a>
-          <button className="mobile-menu-toggle" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? "✕" : "☰"}</button>`r`n          <div className="header-nav">
+          <button className="mobile-menu-toggle" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? "✕" : "☰"}</button>
+          <div className="header-nav">
             <button className="btn-outline" onClick={() => refreshAll()} style={{ marginRight: "8px" }}>🔄 Refresh</button>
             <button className="btn-outline" onClick={logout}>Sign out</button>
           </div>
@@ -103,7 +104,18 @@ export default function App() {
           <button className={tab === "bookings" ? "btn-primary" : "btn-outline"} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
           <button className={tab === "professionals" ? "btn-primary" : "btn-outline"} onClick={() => setTab("professionals")}>Professionals ({pros.length})</button>
           <button className={tab === "coupons" ? "btn-primary" : "btn-outline"} onClick={() => setTab("coupons")}>Coupons</button>
+          <button className={tab === "referrals" ? "btn-primary" : "btn-outline"} onClick={() => setTab("referrals")}>Referrals</button>
         </div>
+
+        {mobileOpen && (
+          <div className="nav-tabs-mobile">
+            <button className={tab === "analytics" ? "btn-primary" : "btn-outline"} onClick={() => { setTab("analytics"); setMobileOpen(false); }}>📊 Analytics</button>
+            <button className={tab === "bookings" ? "btn-primary" : "btn-outline"} onClick={() => { setTab("bookings"); setMobileOpen(false); }}>Bookings ({bookings.length})</button>
+            <button className={tab === "professionals" ? "btn-primary" : "btn-outline"} onClick={() => { setTab("professionals"); setMobileOpen(false); }}>Professionals ({pros.length})</button>
+            <button className={tab === "coupons" ? "btn-primary" : "btn-outline"} onClick={() => { setTab("coupons"); setMobileOpen(false); }}>Coupons</button>
+            <button className={tab === "referrals" ? "btn-primary" : "btn-outline"} onClick={() => { setTab("referrals"); setMobileOpen(false); }}>Referrals</button>
+          </div>
+        )}
 
         {tab === "coupons" && <CouponsTab />}
         
