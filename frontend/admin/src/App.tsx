@@ -15,6 +15,7 @@ export default function App() {
   const [analytics, setAnalytics] = useState<AnalyticsDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [email, setEmail] = useState("admin@gharmitra.local");
   const [password, setPassword] = useState("Admin@1234");
 
@@ -86,7 +87,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-inner">
           <a href="#" className="logo">🏠 GharMitra Admin</a>
-          <div className="header-nav">
+          <button className="mobile-menu-toggle" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? "✕" : "☰"}</button>`r`n          <div className="header-nav">
             <button className="btn-outline" onClick={() => refreshAll()} style={{ marginRight: "8px" }}>🔄 Refresh</button>
             <button className="btn-outline" onClick={logout}>Sign out</button>
           </div>
@@ -97,7 +98,7 @@ export default function App() {
         {live && <div className="live-bar">📡 Live: {live}</div>}
         {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>⚠️ {error}</div>}
 
-        <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
+        <div className="nav-tabs-desktop" style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
           <button className={tab === "analytics" ? "btn-primary" : "btn-outline"} onClick={() => setTab("analytics")}>📊 Analytics</button>
           <button className={tab === "bookings" ? "btn-primary" : "btn-outline"} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
           <button className={tab === "professionals" ? "btn-primary" : "btn-outline"} onClick={() => setTab("professionals")}>Professionals ({pros.length})</button>

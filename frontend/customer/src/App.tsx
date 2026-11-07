@@ -35,6 +35,7 @@ export default function App() {
   const [city, setCity] = useState("Pune");
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [initialPromoCode] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     const params = new URLSearchParams(window.location.search);
@@ -194,7 +195,7 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="header-inner"><a href="#" className="logo">{"\uD83C\uDFE0"} GharMitra</a><div className="header-nav" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div className="header-inner"><a href="#" className="logo">{"\uD83C\uDFE0"} GharMitra</a><button className="mobile-menu-toggle" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? "✕" : "☰"}</button><div className="header-nav" style={{ display: mobileOpen ? "flex" : "none", alignItems: "center", gap: "12px" }}>
             <div style={{
               width: "40px", height: "40px", borderRadius: "50%",
               background: "var(--primary)", color: "white",
