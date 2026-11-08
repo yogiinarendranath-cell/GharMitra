@@ -26,6 +26,16 @@ export type BookingDto = {
   refundAmount?: number | null;
 };
 
+export type VerificationStatusDto = {
+  professionalId: string;
+  status: string;
+  idProofType: string | null;
+  idProofUrl: string | null;
+  selfieUrl: string | null;
+  rejectionReason: string | null;
+  submittedAtUtc: string | null;
+};
+
 export type ProfessionalDto = {
   id: string;
   fullName: string;
@@ -217,4 +227,14 @@ export const adminApi = {
     couponAnalytics: (days = 30) => {
     return request<CouponAnalyticsDto>(`/api/admin/coupons/analytics?days=${days}`);
   },
+
+  // ─── Verification Queue ───
+  getVerificationQueue: () => request<VerificationStatusDto[]>("/api/admin/verifications/queue"),
+  approveVerification: (id: string) =>
+    request<VerificationStatusDto>(`/api/admin/verifications/${id}/approve`, { method: "POST" }),
+  rejectVerification: (id: string, reason: string) =>
+    request<VerificationStatusDto>(`/api/admin/verifications/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
 };

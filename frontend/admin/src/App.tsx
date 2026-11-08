@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { adminApi, setToken, type AuthResponse, type BookingDto, type ProfessionalDto, type AnalyticsDto } from "./lib/api";
+import { adminApi, setToken, type AuthResponse, type BookingDto, type ProfessionalDto, type AnalyticsDto, type VerificationStatusDto } from "./lib/api";
 import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
 import CouponsTab from "./CouponsTab";
 import ReferralsTab from "./ReferralsTab";
 import SocialLinks from "./SocialLinks";
 
-type Tab = "analytics" | "bookings" | "professionals" | "coupons" | "referrals";
+type Tab = "analytics" | "bookings" | "professionals" | "coupons" | "referrals" | "verifications";
 
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
@@ -21,11 +21,16 @@ export default function App() {
   const [password, setPassword] = useState("Admin@1234");
   const [refundTarget, setRefundTarget] = useState<BookingDto | null>(null);
   const [showOnlyRefunded, setShowOnlyRefunded] = useState(false);
+  const [verificationQueue, setVerificationQueue] = useState<VerificationStatusDto[]>([]);
+  const [verifBusy, setVerifBusy] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<VerificationStatusDto | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   async function refreshAll() {
     setBookings(await adminApi.bookings());
     setPros(await adminApi.professionals());
     setAnalytics(await adminApi.analytics());
+    try { setVerificationQueue(await adminApi.getVerificationQueue()); } catch { /* ignore */ }
   }
 
   useEffect(() => {
@@ -44,6 +49,29 @@ export default function App() {
       if (s.role !== "Admin") throw new Error("Not an admin account");
       setToken(s.token); setSession(s); await refreshAll();
     } catch (err) { setError((err as Error).message); }
+  }
+
+  async function approvePro(proId: string) {
+    setVerifBusy(proId);
+    setError(null);
+    try {
+      await adminApi.approveVerification(proId);
+      await refreshAll();
+    } catch (err) { setError((err as Error).message); }
+    finally { setVerifBusy(null); }
+  }
+
+  async function confirmReject() {
+    if (!rejectTarget) return;
+    setVerifBusy(rejectTarget.professionalId);
+    setError(null);
+    try {
+      await adminApi.rejectVerification(rejectTarget.professionalId, rejectReason || "No reason given");
+      setRejectTarget(null);
+      setRejectReason("");
+      await refreshAll();
+    } catch (err) { setError((err as Error).message); }
+    finally { setVerifBusy(null); }
   }
 
   async function assign(bookingId: string, professionalId: string) {
@@ -122,6 +150,7 @@ export default function App() {
           <button className={tab === "professionals" ? "btn-primary" : "btn-outline"} onClick={() => setTab("professionals")}>Professionals ({pros.length})</button>
           <button className={tab === "coupons" ? "btn-primary" : "btn-outline"} onClick={() => setTab("coupons")}>Coupons</button>
           <button className={tab === "referrals" ? "btn-primary" : "btn-outline"} onClick={() => setTab("referrals")}>Referrals</button>
+          <button className={tab === "verifications" ? "btn-primary" : "btn-outline"} onClick={() => setTab("verifications")}>🛡️ Verifications ({verificationQueue.length})</button>
         </div>
 
         {mobileOpen && (
@@ -137,6 +166,69 @@ export default function App() {
         {tab === "coupons" && <CouponsTab />}
         
         {tab === "referrals" && <ReferralsTab />}
+
+        {tab === "verifications" && (
+          <div className="card" style={{ padding: "1.5rem" }}>
+            <h2 style={{ marginBottom: "1rem" }}>🛡️ Verification Queue</h2>
+            {verificationQueue.length === 0 ? (
+              <p style={{ color: "var(--text-muted)" }}>No professionals awaiting verification.</p>
+            ) : (
+              <div className="table-container">
+                <table>
+                  <thead><tr><th>Professional ID</th><th>ID Type</th><th>Submitted</th><th>Documents</th><th>Action</th></tr></thead>
+                  <tbody>
+                    {verificationQueue.map(v => (
+                      <tr key={v.professionalId}>
+                        <td><code style={{ fontSize: "0.75rem" }}>{v.professionalId.slice(0, 8)}...</code></td>
+                        <td>{v.idProofType || "—"}</td>
+                        <td>{v.submittedAtUtc ? new Date(v.submittedAtUtc).toLocaleDateString() : "—"}</td>
+                        <td>
+                          {v.idProofUrl && <a href={v.idProofUrl} target="_blank" rel="noopener noreferrer" style={{ marginRight: "0.5rem" }}>📄 ID</a>}
+                          {v.selfieUrl && <a href={v.selfieUrl} target="_blank" rel="noopener noreferrer">🤳 Selfie</a>}
+                        </td>
+                        <td>
+                          <button onClick={() => approvePro(v.professionalId)} disabled={verifBusy === v.professionalId} className="btn-primary btn-sm" style={{ marginRight: "0.5rem" }}>
+                            {verifBusy === v.professionalId ? "..." : "✅ Approve"}
+                          </button>
+                          <button onClick={() => { setRejectTarget(v); setRejectReason(""); }} disabled={verifBusy === v.professionalId} className="btn-danger btn-sm">
+                            ❌ Reject
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {rejectTarget && (
+          <div className="modal-backdrop" onClick={() => setRejectTarget(null)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+              <h2 style={{ marginBottom: "0.5rem" }}>Reject Verification</h2>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1rem" }}>
+                Professional: {rejectTarget.professionalId.slice(0, 8)}...
+              </p>
+              <label style={{ fontSize: "0.85rem", fontWeight: 500, display: "block", marginBottom: "0.35rem" }}>
+                Rejection reason (sent to professional)
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                rows={3}
+                placeholder="e.g., ID photo is blurry, please re-upload"
+                style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontFamily: "inherit", fontSize: "0.9rem" }}
+              />
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+                <button onClick={() => setRejectTarget(null)} className="btn-outline" disabled={!!verifBusy} style={{ flex: 1, padding: "0.75rem" }}>Cancel</button>
+                <button onClick={confirmReject} disabled={!!verifBusy} className="btn-danger" style={{ flex: 1, padding: "0.75rem", background: "#DC2626", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>
+                  {verifBusy ? "Rejecting..." : "Reject"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {tab === "analytics" && analytics && kpis && (
           <>
