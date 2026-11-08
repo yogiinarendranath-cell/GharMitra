@@ -31,3 +31,5 @@ Thumbs.dbcloudflared.exe
 *.broken-*
 *.mojibake-*
 *.bak-*
+# Audit dumps (local only)
+_audit_*/
