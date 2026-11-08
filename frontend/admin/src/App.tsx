@@ -308,11 +308,21 @@ export default function App() {
         )}
 
         {tab === "bookings" && (
+          <>
+          {/* Admin filter: refunded only */}
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", fontSize: "0.9rem" }}>
+            <input
+              type="checkbox"
+              checked={showOnlyRefunded}
+              onChange={e => setShowOnlyRefunded(e.target.checked)}
+            />
+            Show only refunded bookings
+          </label>
           <div className="table-container">
             <table>
               <thead><tr><th>Booking</th><th>Service</th><th>Amount</th><th>Status</th><th>Professional</th><th>Action</th></tr></thead>
               <tbody>
-                {bookings.map(b => (
+                {bookings.filter(b => !showOnlyRefunded || !!b.refundedAtUtc).map(b => (
                   <tr key={b.id}>
                     <td><strong>{b.bookingNumber}</strong><br/><span style={{fontSize:"0.8rem", color:"var(--text-muted)"}}>{b.city}</span></td>
                     <td>{b.serviceName}</td>
@@ -321,10 +331,34 @@ export default function App() {
                       <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
                         <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
                         <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
+                        {/* Admin refund UI: badge */}
+                        {b.refundedAtUtc && (
+                          <span style={{ fontSize: "0.7rem", color: "#059669", fontWeight: 600 }}>
+                            {"\u21A9"} {"\u20b9"}{b.refundAmount?.toFixed(2)} refunded
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td>{b.professionalName ?? "—"}</td>
                     <td>
+                      {/* Admin refund UI: button */}
+                      {b.status === "Cancelled" && b.paymentStatus === "Paid" && !b.refundedAtUtc && (
+                        <button
+                          onClick={() => refund(b)}
+                          style={{
+                            marginBottom: "0.4rem",
+                            padding: "0.35rem 0.7rem",
+                            fontSize: "0.75rem",
+                            background: "#DC2626",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Refund {"\u20b9"}{b.totalAmount.toFixed(2)}
+                        </button>
+                      )}
                       {b.status === "Pending" && (
                         b.paymentStatus !== 'Paid'
                           ? <span style={{ color: "var(--warning)", fontSize: "0.85rem", fontWeight: "bold" }}>Awaiting Payment</span>
@@ -341,7 +375,7 @@ export default function App() {
               </tbody>
             </table>
           </div>
-        )}
+          </>1
 
         {tab === "professionals" && (
           <div className="table-container">
