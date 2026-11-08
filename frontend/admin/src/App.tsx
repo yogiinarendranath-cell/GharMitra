@@ -375,7 +375,8 @@ export default function App() {
               </tbody>
             </table>
           </div>
-          </>1
+          </>
+        )}
 
         {tab === "professionals" && (
           <div className="table-container">
