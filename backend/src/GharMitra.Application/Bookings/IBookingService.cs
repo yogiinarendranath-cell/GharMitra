@@ -9,4 +9,5 @@ public interface IBookingService
     Task<BookingDto> CancelAsync(Guid customerUserId, Guid bookingId, string? reason, CancellationToken ct = default);
     Task<List<AdminProfessionalDto>> GetProfessionalsAsync(CancellationToken ct = default);
         Task<RefundResultDto> RefundAsync(Guid customerUserId, Guid bookingId, string reason, CancellationToken ct = default);
+    Task<RefundResultDto> AdminRefundAsync(Guid bookingId, string reason, CancellationToken ct = default);
 }

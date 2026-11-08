@@ -235,6 +235,54 @@ public class BookingService : IBookingService
             $"₹{refundAmount} refunded successfully. {refundReasonLabel}.");
     }
 
+    public async Task<RefundResultDto> AdminRefundAsync(
+        Guid bookingId,
+        string reason,
+        CancellationToken ct = default)
+    {
+        var booking = await _db.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId, ct)
+            ?? throw new InvalidOperationException("Booking not found.");
+
+        if (booking.PaymentStatus != PaymentStatus.Paid)
+            return new RefundResultDto(false, 0, "not_paid",
+                "Cannot refund a booking that hasn't been paid.");
+
+        if (booking.RefundedAtUtc.HasValue)
+            return new RefundResultDto(false, 0, "already_refunded",
+                $"This booking was already refunded on {booking.RefundedAtUtc.Value:MMM dd, yyyy}.");
+
+        // Admin bypasses the 24h / 50% rule — refunds full amount regardless of timing.
+        // If you want admin to also respect the policy, replace refundPercent with the same
+        // logic as RefundAsync. For support/ops refunds, full refund is the usual intent.
+        var refundPercent = 1.0m;
+        var refundReasonLabel = "Full refund (admin-initiated)";
+
+        var refundAmount = Math.Round(booking.TotalAmount * refundPercent, 2);
+
+        if (string.IsNullOrEmpty(booking.RazorpayPaymentId))
+            return new RefundResultDto(false, 0, "no_payment_id",
+                "No payment record found for this booking.");
+
+        var refundId = await _payments.RefundAsync(
+            booking.RazorpayPaymentId,
+            refundAmount,
+            reason,
+            ct);
+
+        if (refundId == null)
+            return new RefundResultDto(false, 0, "razorpay_failed",
+                "Refund could not be processed by Razorpay. Please contact support.");
+
+        booking.RefundAmount = refundAmount;
+        booking.RefundedAtUtc = DateTime.UtcNow;
+        booking.RefundReason = $"[ADMIN] {reason} ({refundReasonLabel}) — Razorpay refund ID: {refundId}";
+        booking.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        return new RefundResultDto(true, refundAmount, "success",
+            $"₹{refundAmount} refunded successfully (admin-initiated).");
+    }
     public Task<List<AdminProfessionalDto>> GetProfessionalsAsync(CancellationToken ct = default) =>
         _db.Professionals
             .Select(p => new AdminProfessionalDto(p.Id, p.User.FullName, p.City, p.IsVerified, p.IsAvailable, p.Rating))

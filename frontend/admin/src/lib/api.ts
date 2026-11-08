@@ -194,7 +194,7 @@ export const adminApi = {
     }),
   refundBooking: (bookingId: string, reason: string) =>
     request<{ success: boolean; amountRefunded: number; reason: string; message: string }>(
-      `/api/bookings/${bookingId}/refund`,
+      `/api/admin/bookings/${bookingId}/refund`,
       { method: "POST", body: JSON.stringify({ reason }) }
     ),
   verify: (professionalId: string, notes?: string) =>
