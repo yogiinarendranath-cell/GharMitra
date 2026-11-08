@@ -79,7 +79,10 @@ public class BookingService : IBookingService
                 b.TotalAmount, b.Status.ToString(), b.PaymentStatus.ToString(),
                 b.Assignment == null ? null : b.Assignment.Professional.User.FullName,
                 b.Assignment == null ? null : b.Assignment.Professional.Latitude,
-                b.Assignment == null ? null : b.Assignment.Professional.Longitude))
+                b.Assignment == null ? null : b.Assignment.Professional.Longitude,
+                b.RefundAmount,
+                b.RefundedAtUtc,
+                b.RefundReason))
             .ToListAsync(ct);
     }
 
@@ -94,7 +97,10 @@ public class BookingService : IBookingService
                 b.TotalAmount, b.Status.ToString(), b.PaymentStatus.ToString(),
                 b.Assignment == null ? null : b.Assignment.Professional.User.FullName,
                 b.Assignment == null ? null : b.Assignment.Professional.Latitude,
-                b.Assignment == null ? null : b.Assignment.Professional.Longitude))
+                b.Assignment == null ? null : b.Assignment.Professional.Longitude,
+                b.RefundAmount,
+                b.RefundedAtUtc,
+                b.RefundReason))
             .ToListAsync(ct);
     }
 
