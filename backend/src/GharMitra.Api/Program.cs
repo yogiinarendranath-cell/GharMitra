@@ -124,17 +124,30 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<BookingHub>("/hubs/booking");
 
-if (app.Environment.IsDevelopment())
+// ─── MIGRATIONS: run in ALL environments when MIGRATIONS_ENABLED=true ───
+// This ensures production DB schema stays in sync with code.
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<GharMitraDbContext>();
     var runMigrations = Environment.GetEnvironmentVariable("MIGRATIONS_ENABLED")
-    ?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
-if (runMigrations)
-{
-    await db.Database.MigrateAsync();
-}
-    await DbSeeder.SeedAsync(db);
+        ?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
+    
+    if (runMigrations)
+    {
+        Log.Information("Applying migrations (MIGRATIONS_ENABLED=true)...");
+        await db.Database.MigrateAsync();
+        Log.Information("Migrations applied successfully.");
+    }
+    else
+    {
+        Log.Information("Skipping migrations (MIGRATIONS_ENABLED not set to true).");
+    }
+
+    // Seeding only in Development
+    if (app.Environment.IsDevelopment())
+    {
+        await DbSeeder.SeedAsync(db);
+    }
 }
 
 app.Run();
