@@ -332,6 +332,12 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("IdProofType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IdProofUrl")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("boolean");
 
@@ -351,6 +357,12 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                         .HasPrecision(3, 2)
                         .HasColumnType("numeric(3,2)");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SelfieUrl")
+                        .HasColumnType("text");
+
                     b.Property<int>("TotalJobs")
                         .HasColumnType("integer");
 
@@ -363,6 +375,9 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Property<string>("VerificationNotes")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<int>("VerificationStatus")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("VerifiedAtUtc")
                         .HasColumnType("timestamp with time zone");

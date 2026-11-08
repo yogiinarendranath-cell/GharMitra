@@ -115,6 +115,7 @@ if (app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging();
 
 // CRITICAL: CORS MUST BE CALLED BEFORE AUTHENTICATION
+app.UseStaticFiles(); // serve /wwwroot and /uploads
 app.UseCors("spa");
 
 app.UseRateLimiter();

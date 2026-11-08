@@ -102,4 +102,41 @@ public class AdminController : ControllerBase
         CancellationToken ct)
         => Ok(await referrals.GetAdminStatsAsync(ct));
 
+    // ─── VERIFICATION QUEUE ENDPOINTS ───
+    
+    [HttpGet("verifications/queue")]
+    public async Task<ActionResult<List<VerificationStatusDto>>> VerificationQueue(
+        [FromServices] IProfessionalVerificationService verification, CancellationToken ct)
+        => Ok(await verification.GetQueueAsync(ct));
+
+    [HttpPost("verifications/{id:guid}/approve")]
+    public async Task<ActionResult<VerificationStatusDto>> ApproveVerification(
+        Guid id,
+        [FromServices] IProfessionalVerificationService verification,
+        CancellationToken ct)
+    {
+        try
+        {
+            var adminId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+            return Ok(await verification.ApproveAsync(id, adminId, ct));
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("verifications/{id:guid}/reject")]
+    public async Task<ActionResult<VerificationStatusDto>> RejectVerification(
+        Guid id,
+        [FromBody] VerificationRejectRequest request,
+        [FromServices] IProfessionalVerificationService verification,
+        CancellationToken ct)
+    {
+        try
+        {
+            var adminId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+            return Ok(await verification.RejectAsync(id, adminId, request.Reason, ct));
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    public record VerificationRejectRequest(string Reason);
 }

@@ -13,11 +13,13 @@ namespace GharMitra.Api.Controllers;
 public class PartnerController : ControllerBase
 {
     private readonly IProfessionalService _pros;
+    private readonly IProfessionalVerificationService _verification;
     private readonly IApplicationDbContext _db;
 
-    public PartnerController(IProfessionalService pros, IApplicationDbContext db)
+    public PartnerController(IProfessionalService pros, IProfessionalVerificationService verification, IApplicationDbContext db)
     {
         _pros = pros;
+        _verification = verification;
         _db = db;
     }
 
@@ -86,5 +88,21 @@ public class PartnerController : ControllerBase
         pro.LastLocationUpdateUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         return Ok(new { message = "Location updated" });
+    }
+    // ─── VERIFICATION ENDPOINTS ───
+    
+    [HttpPost("verification/upload")]
+    public async Task<ActionResult<VerificationStatusDto>> UploadVerification(
+        [FromBody] SubmitVerificationRequest request, CancellationToken ct)
+    {
+        try { return Ok(await _verification.SubmitAsync(CurrentUserId, request, ct)); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpGet("verification/status")]
+    public async Task<ActionResult<VerificationStatusDto>> VerificationStatus(CancellationToken ct)
+    {
+        try { return Ok(await _verification.GetStatusAsync(CurrentUserId, ct)); }
+        catch (InvalidOperationException ex) { return NotFound(new { message = ex.Message }); }
     }
 }
