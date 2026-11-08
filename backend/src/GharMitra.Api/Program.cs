@@ -1,3 +1,28 @@
+// ─── MIGRATIONS: run in ALL environments when MIGRATIONS_ENABLED=true ───
+// Ensures production DB schema stays in sync with code.
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<GharMitraDbContext>();
+    var runMigrations = Environment.GetEnvironmentVariable("MIGRATIONS_ENABLED")
+        ?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
+    
+    if (runMigrations)
+    {
+        Log.Information("Applying migrations (MIGRATIONS_ENABLED=true)...");
+        await db.Database.MigrateAsync();
+        Log.Information("Migrations applied successfully.");
+    }
+    else
+    {
+        Log.Information("Skipping migrations (MIGRATIONS_ENABLED not set to true).");
+    }
+
+    // Seeding only in Development
+    if (app.Environment.IsDevelopment())
+    {
+        await DbSeeder.SeedAsync(db);
+    }
+}
 using System.Text;
 using System.Threading.RateLimiting;
 using GharMitra.Api.Hubs;
