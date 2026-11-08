@@ -138,7 +138,7 @@ export const api = {
       body: JSON.stringify({ reason: reason ?? null }),
     }),
   payBooking: (id: string) => request<any>(`/api/bookings/${id}/pay`, { method: "POST" }),
-  canReview: (id: string) => request<{ canReview: boolean }>(`/api/bookings/${id}/can-review`),
+  canReview: (id: string) => request<boolean>(`/api/professionals/bookings/${id}/can-review`),
   submitReview: (id: string, body: { rating: number; comment?: string }) =>
     request<ReviewDto>(`/api/bookings/${id}/reviews`, { method: "POST", body: JSON.stringify(body) }),
   verifyPayment: (id: string, data: any) =>

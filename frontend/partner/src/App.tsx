@@ -111,7 +111,7 @@ export default function App() {
                 {(profile?.fullName ?? "P").charAt(0).toUpperCase()}
               </div>
               <div style={{ lineHeight: 1.2 }}>
-                <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{profile?.fullName}</div>
+                <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{profile?.fullName} {profile?.rating ? `⭐ ${profile.rating.toFixed(1)}` : ""}</div>
                 <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{profile?.city}</div>
               </div>
             </div>
