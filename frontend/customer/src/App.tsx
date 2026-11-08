@@ -7,6 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import ApplyCoupon from "./ApplyCoupon";
 import ReferAFriend from "./ReferAFriend";
+import SocialLinks from "./SocialLinks";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -43,6 +44,7 @@ export default function App() {
   });
 
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<BookingDto | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
 
@@ -138,10 +140,19 @@ export default function App() {
     } catch (err) { setError((err as Error).message); }
   }
 
-  async function cancel(b: BookingDto) {
-    if (!confirm(`Cancel booking ${b.bookingNumber}?`)) return;
-    try { await api.cancelBooking(b.id, "Customer cancelled"); setBookings(await api.myBookings()); }
-    catch (err) { setError((err as Error).message); }
+  function cancel(b: BookingDto) {
+    setCancelTarget(b);
+  }
+
+  async function confirmCancel(reason: string) {
+    if (!cancelTarget) return;
+    try {
+      await api.cancelBooking(cancelTarget.id, reason);
+      setBookings(await api.myBookings());
+      setCancelTarget(null);
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
   async function submitReview(e: React.FormEvent) {
@@ -244,6 +255,11 @@ export default function App() {
               <div className="booking-info">
                 <h4>{b.serviceName}</h4>
                 <div className="booking-meta">{"\u20b9"}{b.totalAmount} {"\u2022"} {new Date(b.scheduledStartUtc).toLocaleString()}</div>
+                {b.refundedAtUtc && (
+                  <div style={{ fontSize: "0.8rem", color: "#059669", fontWeight: 600, marginTop: "4px" }}>
+                    {"\u21A9"} Refunded {"\u20b9"}{b.refundAmount?.toFixed(2)} {"\u2022"} {new Date(b.refundedAtUtc).toLocaleDateString()}
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
                   <span className={`badge badge-${b.status.toLowerCase()}`}>{b.status}</span>
                   <span className={`badge ${b.paymentStatus === 'Paid' ? 'badge-accepted' : 'badge-pending'}`}>{b.paymentStatus}</span>
@@ -349,7 +365,137 @@ export default function App() {
           </div>
         </div>
       )}
-      <footer className="app-footer"><div className="footer-inner"><h3>GharMitra</h3><p>The trusted marketplace for home services in India.</p><div className="footer-bottom">{"\u00a9"} 2026 GharMitra. All rights reserved.</div></div></footer>
+            {cancelTarget && (
+        <CancelBookingModal
+          booking={cancelTarget}
+          onConfirm={confirmCancel}
+          onClose={() => setCancelTarget(null)}
+        />
+      )}
+<footer className="app-footer">
+        <div className="footer-inner">
+          <h3>GharMitra</h3>
+          <p>The trusted marketplace for home services in India.</p>
+          <SocialLinks />
+          <div className="footer-bottom">{"\u00a9"} 2026 GharMitra. All rights reserved.</div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// ───── Cancel Booking Modal ─────
+// Shows refund preview based on time until service, before confirming cancellation.
+
+function CancelBookingModal({
+  booking,
+  onConfirm,
+  onClose,
+}: {
+  booking: BookingDto;
+  onConfirm: (reason: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [reason, setReason] = useState("Customer cancelled");
+  const [busy, setBusy] = useState(false);
+
+  // Compute refund preview
+  const hoursUntil = (new Date(booking.scheduledStartUtc).getTime() - Date.now()) / (1000 * 60 * 60);
+  let refundLabel = "";
+  let refundAmount = 0;
+  let canRefund = false;
+  let refundColor = "#6B7280";
+
+  if (booking.paymentStatus !== "Paid") {
+    refundLabel = "No refund (booking not paid)";
+    canRefund = false;
+  } else if (hoursUntil >= 24) {
+    refundAmount = booking.totalAmount;
+    refundLabel = `Full refund: \u20b9${refundAmount.toFixed(2)} (more than 24h before service)`;
+    canRefund = true;
+    refundColor = "#059669";
+  } else if (hoursUntil > 0) {
+    refundAmount = Math.round(booking.totalAmount * 0.5 * 100) / 100;
+    refundLabel = `50% refund: \u20b9${refundAmount.toFixed(2)} (less than 24h before service)`;
+    canRefund = true;
+    refundColor = "#D97706";
+  } else {
+    refundLabel = "No refund (service has already started)";
+    canRefund = false;
+    refundColor = "#DC2626";
+  }
+
+  async function handleConfirm() {
+    setBusy(true);
+    try {
+      await onConfirm(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+        <h2 style={{ marginBottom: "0.5rem" }}>Cancel Booking?</h2>
+        <p style={{ color: "var(--text-muted)", marginBottom: "1rem", fontSize: "0.9rem" }}>
+          {booking.bookingNumber} \u00b7 {booking.serviceName}
+        </p>
+
+        <div style={{
+          padding: "1rem",
+          borderRadius: "8px",
+          background: canRefund ? "#F0FDF4" : "#FEF2F2",
+          border: `1px solid ${refundColor}`,
+          marginBottom: "1rem",
+        }}>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "4px" }}>
+            Refund preview
+          </div>
+          <div style={{ fontSize: "1rem", fontWeight: 600, color: refundColor }}>
+            {refundLabel}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={{ fontSize: "0.85rem", fontWeight: 500, display: "block", marginBottom: "0.35rem" }}>
+            Reason (optional)
+          </label>
+          <textarea
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            rows={2}
+            style={{
+              width: "100%",
+              padding: "0.6rem",
+              border: "1px solid var(--border)",
+              borderRadius: "6px",
+              fontFamily: "inherit",
+              fontSize: "0.9rem",
+              resize: "vertical",
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            onClick={onClose}
+            className="btn-outline"
+            disabled={busy}
+            style={{ flex: 1, padding: "0.75rem" }}
+          >
+            Keep booking
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={busy}
+            className="btn-danger"
+            style={{ flex: 1, padding: "0.75rem" }}
+          >
+            {busy ? "Cancelling..." : canRefund ? `Cancel & Refund \u20b9${refundAmount.toFixed(2)}` : "Cancel booking"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

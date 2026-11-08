@@ -4,6 +4,7 @@ import { adminApi, setToken, type AuthResponse, type BookingDto, type Profession
 import { connectBookingHub, disconnectBookingHub } from "./lib/signalr";
 import CouponsTab from "./CouponsTab";
 import ReferralsTab from "./ReferralsTab";
+import SocialLinks from "./SocialLinks";
 
 type Tab = "analytics" | "bookings" | "professionals" | "coupons" | "referrals";
 
@@ -350,7 +351,8 @@ export default function App() {
       <footer className="app-footer">
         <div className="footer-inner">
           <h3>GharMitra Admin</h3>
-          <div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div>
+          <SocialLinks />
+          <div className="footer-bottom">{"\u00a9"} 2026 GharMitra. All rights reserved.</div>
         </div>
       </footer>
     </div>

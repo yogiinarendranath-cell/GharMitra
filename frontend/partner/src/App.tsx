@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import { partnerApi, setToken, type AuthResponse, type Profile, type Assignment, type Earnings } from "./lib/api";
+import SocialLinks from "./SocialLinks";
 
 type Tab = "jobs" | "earnings";
 
@@ -272,6 +273,7 @@ export default function App() {
       <footer className="app-footer">
         <div className="footer-inner">
           <h3>GharMitra Partner</h3>
+          <SocialLinks />
           <div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div>
         </div>
       </footer>

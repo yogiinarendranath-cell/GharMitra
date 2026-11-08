@@ -29,6 +29,8 @@ export type ServiceCategoryDto = {
 };
 
 export type BookingDto = {
+  refundedAtUtc?: string | null;
+  refundAmount?: number | null;
   id: string;
   bookingNumber: string;
   serviceName: string;
