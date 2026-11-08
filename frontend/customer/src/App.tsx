@@ -439,7 +439,7 @@ function CancelBookingModal({
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: "500px" }}>
         <h2 style={{ marginBottom: "0.5rem" }}>Cancel Booking?</h2>
         <p style={{ color: "var(--text-muted)", marginBottom: "1rem", fontSize: "0.9rem" }}>
-          {booking.bookingNumber} \u00b7 {booking.serviceName}
+          {booking.bookingNumber} {"\u00b7"} {booking.serviceName}
         </p>
 
         <div style={{
