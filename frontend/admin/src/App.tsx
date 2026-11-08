@@ -308,21 +308,11 @@ export default function App() {
         )}
 
         {tab === "bookings" && (
-          <>
-          {/* Admin filter: refunded only */}
-          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", fontSize: "0.9rem" }}>
-            <input
-              type="checkbox"
-              checked={showOnlyRefunded}
-              onChange={e => setShowOnlyRefunded(e.target.checked)}
-            />
-            Show only refunded bookings
-          </label>
-                    <div className="table-container">
+          <div className="table-container">
             <table>
               <thead><tr><th>Booking</th><th>Service</th><th>Amount</th><th>Status</th><th>Professional</th><th>Action</th></tr></thead>
               <tbody>
-                {bookings.filter(b => !showOnlyRefunded || !!b.refundedAtUtc).map(b => (
+                {bookings.map(b => (
                   <tr key={b.id}>
                     <td><strong>{b.bookingNumber}</strong><br/><span style={{fontSize:"0.8rem", color:"var(--text-muted)"}}>{b.city}</span></td>
                     <td>{b.serviceName}</td>
@@ -351,7 +341,6 @@ export default function App() {
               </tbody>
             </table>
           </div>
-          </>
         )}
 
         {tab === "professionals" && (
