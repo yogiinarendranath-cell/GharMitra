@@ -78,7 +78,7 @@ export default function App() {
             {error && <p style={{ color: "var(--danger)", marginTop: "1rem" }}>{error}</p>}
           </div>
         </main>
-        <footer className="app-footer"><div className="footer-inner">© 2026 GharMitra Partner</div></footer>
+        <footer className="app-footer"><div className="footer-inner">🏠 GharMitra Partner</div></footer>
       </div>
     );
   }
@@ -272,7 +272,7 @@ export default function App() {
       </main>
       <footer className="app-footer">
         <div className="footer-inner">
-          <h3>GharMitra Partner</h3>
+          <h3>🏠 GharMitra Partner</h3>
           <SocialLinks />
           <div className="footer-bottom">© 2026 GharMitra. All rights reserved.</div>
         </div>
