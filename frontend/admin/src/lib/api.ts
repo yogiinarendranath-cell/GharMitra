@@ -22,6 +22,8 @@ export type BookingDto = {
   status: string;
   paymentStatus: string;
   professionalName: string | null;
+  refundedAtUtc?: string | null;
+  refundAmount?: number | null;
 };
 
 export type ProfessionalDto = {
@@ -190,6 +192,11 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify({ professionalId }),
     }),
+  refundBooking: (bookingId: string, reason: string) =>
+    request<{ success: boolean; amountRefunded: number; reason: string; message: string }>(
+      `/api/bookings/${bookingId}/refund`,
+      { method: "POST", body: JSON.stringify({ reason }) }
+    ),
   verify: (professionalId: string, notes?: string) =>
     request<void>(`/api/admin/professionals/${professionalId}/verify`, {
       method: "POST",

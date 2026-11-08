@@ -19,6 +19,8 @@ export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [email, setEmail] = useState("admin@gharmitra.local");
   const [password, setPassword] = useState("Admin@1234");
+  const [refundTarget, setRefundTarget] = useState<BookingDto | null>(null);
+  const [showOnlyRefunded, setShowOnlyRefunded] = useState(false);
 
   async function refreshAll() {
     setBookings(await adminApi.bookings());
@@ -56,6 +58,20 @@ export default function App() {
     catch (err) { setError((err as Error).message); }
   }
 
+  function refund(b: BookingDto) {
+    setRefundTarget(b);
+  }
+
+  async function confirmRefund(reason: string) {
+    if (!refundTarget) return;
+    try {
+      await adminApi.refundBooking(refundTarget.id, reason);
+      await refreshAll();
+      setRefundTarget(null);
+    } catch (err) {
+      setError("Refund failed: " + (err as Error).message);
+    }
+  }
   function logout() {
     disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setPros([]); setAnalytics(null); setLive(null);
   }
@@ -348,6 +364,13 @@ export default function App() {
         )}
       </main>
 
+      {refundTarget && (
+        <RefundConfirmModal
+          booking={refundTarget}
+          onConfirm={confirmRefund}
+          onClose={() => setRefundTarget(null)}
+        />
+      )}
       <footer className="app-footer">
         <div className="footer-inner">
           <h3>GharMitra Admin</h3>
@@ -355,6 +378,96 @@ export default function App() {
           <div className="footer-bottom">{"\u00a9"} 2026 GharMitra. All rights reserved.</div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+// ───── Admin Refund Confirm Modal ─────
+function RefundConfirmModal({
+  booking,
+  onConfirm,
+  onClose,
+}: {
+  booking: BookingDto;
+  onConfirm: (reason: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [reason, setReason] = useState("Admin refund");
+  const [busy, setBusy] = useState(false);
+
+  async function handleConfirm() {
+    setBusy(true);
+    try {
+      await onConfirm(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+        <h2 style={{ marginBottom: "0.5rem" }}>Refund Booking?</h2>
+        <p style={{ color: "var(--text-muted)", marginBottom: "1rem", fontSize: "0.9rem" }}>
+          {booking.bookingNumber} {"\u00b7"} {booking.serviceName}
+        </p>
+
+        <div style={{
+          padding: "1rem",
+          borderRadius: "8px",
+          background: "#FEF2F2",
+          border: "1px solid #DC2626",
+          marginBottom: "1rem",
+        }}>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "4px" }}>
+            Full refund amount
+          </div>
+          <div style={{ fontSize: "1.4rem", fontWeight: 700, color: "#DC2626" }}>
+            {"\u20b9"}{booking.totalAmount.toFixed(2)}
+          </div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>
+            This action calls Razorpay and returns money to the customer. It cannot be undone.
+          </div>
+        </div>
+
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={{ fontSize: "0.85rem", fontWeight: 500, display: "block", marginBottom: "0.35rem" }}>
+            Reason
+          </label>
+          <textarea
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            rows={2}
+            style={{
+              width: "100%",
+              padding: "0.6rem",
+              border: "1px solid var(--border)",
+              borderRadius: "6px",
+              fontFamily: "inherit",
+              fontSize: "0.9rem",
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            onClick={onClose}
+            className="btn-outline"
+            disabled={busy}
+            style={{ flex: 1, padding: "0.75rem" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={busy}
+            className="btn-danger"
+            style={{ flex: 1, padding: "0.75rem", background: "#DC2626", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}
+          >
+            {busy ? "Refunding..." : `Refund \u20b9${booking.totalAmount.toFixed(2)}`}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
