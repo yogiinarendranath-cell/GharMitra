@@ -27,6 +27,16 @@ export type Earnings = {
   last7Days: { date: string; amount: number; jobs: number }[];
 };
 
+export type VerificationStatus = {
+  professionalId: string;
+  status: string;
+  idProofType: string | null;
+  idProofUrl: string | null;
+  selfieUrl: string | null;
+  rejectionReason: string | null;
+  submittedAtUtc: string | null;
+};
+
 export const tokenKey = "gm_partner_token";
 
 export function setToken(t: string | null) {
@@ -62,4 +72,7 @@ export const partnerApi = {
   start: (id: string) => request<Assignment>(`/api/partner/assignments/${id}/start`, { method: "POST" }),
   complete: (id: string) => request<Assignment>(`/api/partner/assignments/${id}/complete`, { method: "POST" }),
   setAvailability: (isAvailable: boolean) => request<{message: string}>("/api/partner/availability", { method: "POST", body: JSON.stringify({ isAvailable }) }),
+  getVerificationStatus: () => request<VerificationStatus>("/api/partner/verification/status"),
+  submitVerification: (body: { idProofType: string; idProofUrl: string; selfieUrl: string }) =>
+    request<VerificationStatus>("/api/partner/verification/upload", { method: "POST", body: JSON.stringify(body) }),
 };

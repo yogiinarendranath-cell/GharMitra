@@ -1,9 +1,9 @@
 import { useState } from "react";
 import "./App.css";
-import { partnerApi, setToken, type AuthResponse, type Profile, type Assignment, type Earnings } from "./lib/api";
+import { partnerApi, setToken, type AuthResponse, type Profile, type Assignment, type Earnings, type VerificationStatus } from "./lib/api";
 import SocialLinks from "./SocialLinks";
 
-type Tab = "jobs" | "earnings";
+type Tab = "jobs" | "earnings" | "verification";
 
 const STATUS_COLORS: Record<string, string> = {
   Pending: "#FEF3C7",
@@ -19,6 +19,9 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [earnings, setEarnings] = useState<Earnings | null>(null);
+  const [verification, setVerification] = useState<VerificationStatus | null>(null);
+  const [verifForm, setVerifForm] = useState({ idProofType: "Aadhaar", idProofUrl: "", selfieUrl: "" });
+  const [verifSubmitting, setVerifSubmitting] = useState(false);
   const [tab, setTab] = useState<Tab>("jobs");
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("pro@gharmitra.local");
@@ -29,6 +32,7 @@ export default function App() {
     setProfile(await partnerApi.me());
     setAssignments(await partnerApi.assignments());
     setEarnings(await partnerApi.earnings());
+    try { setVerification(await partnerApi.getVerificationStatus()); } catch { /* ignore */ }
   }
 
   async function login(e: React.FormEvent) {
@@ -39,6 +43,25 @@ export default function App() {
       setToken(s.token); setSession(s); await refreshAll();
     } catch (err) { setError((err as Error).message); }
     finally { setBusy(false); }
+  }
+
+  async function submitVerification(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!verifForm.idProofUrl || !verifForm.selfieUrl) {
+      setError("Both ID proof URL and selfie URL are required.");
+      return;
+    }
+    setVerifSubmitting(true);
+    try {
+      const result = await partnerApi.submitVerification(verifForm);
+      setVerification(result);
+      setVerifForm({ idProofType: "Aadhaar", idProofUrl: "", selfieUrl: "" });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setVerifSubmitting(false);
+    }
   }
 
   async function toggleAvailability() {
@@ -134,6 +157,10 @@ export default function App() {
           <button className={tab === "earnings" ? "btn-primary" : "btn-outline"} onClick={() => setTab("earnings")}>
             💰 Earnings
           </button>
+          <button className={tab === "verification" ? "btn-primary" : "btn-outline"} onClick={() => setTab("verification")}>
+            🛡️ Verification
+            {verification?.status === "Verified" ? " ✅" : verification?.status === "Rejected" ? " ❌" : ""}
+          </button>
         </div>
 
         {error && <div style={{ background: "#FEE2E2", color: "#991B1B", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>⚠️ {error}</div>}
@@ -224,6 +251,60 @@ export default function App() {
               </>
             )}
           </>
+        )}
+
+        {tab === "verification" && (
+          <div className="card" style={{ padding: "1.5rem", maxWidth: "600px", margin: "0 auto" }}>
+            <h2 style={{ marginBottom: "1rem" }}>🛡️ Verification Status</h2>
+            {!verification && <p style={{ color: "var(--text-muted)" }}>Loading...</p>}
+
+            {verification && verification.status === "Verified" && (
+              <div style={{ padding: "1rem", background: "#D1FAE5", borderRadius: "8px", border: "1px solid #10B981" }}>
+                <p style={{ fontWeight: 700, color: "#065F46", marginBottom: "0.5rem" }}>✅ Verified</p>
+                <p style={{ fontSize: "0.9rem", color: "#065F46" }}>Your identity has been verified. You can accept jobs.</p>
+              </div>
+            )}
+
+            {verification && verification.status === "UnderReview" && (
+              <div style={{ padding: "1rem", background: "#FEF3C7", borderRadius: "8px", border: "1px solid #F59E0B" }}>
+                <p style={{ fontWeight: 700, color: "#92400E", marginBottom: "0.5rem" }}>⏳ Under Review</p>
+                <p style={{ fontSize: "0.9rem", color: "#92400E" }}>Your documents are being reviewed. This usually takes 1-2 business days.</p>
+              </div>
+            )}
+
+            {verification && verification.status === "Rejected" && (
+              <div style={{ padding: "1rem", background: "#FEE2E2", borderRadius: "8px", border: "1px solid #DC2626", marginBottom: "1rem" }}>
+                <p style={{ fontWeight: 700, color: "#991B1B", marginBottom: "0.5rem" }}>❌ Rejected</p>
+                <p style={{ fontSize: "0.9rem", color: "#991B1B" }}>Reason: {verification.rejectionReason || "No reason provided"}</p>
+              </div>
+            )}
+
+            {verification && (verification.status === "Pending" || verification.status === "Rejected") && (
+              <form onSubmit={submitVerification} style={{ display: "grid", gap: "1rem" }}>
+                <div>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 500, display: "block", marginBottom: "0.35rem" }}>ID Proof Type</label>
+                  <select value={verifForm.idProofType} onChange={e => setVerifForm({ ...verifForm, idProofType: e.target.value })} style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px" }}>
+                    <option value="Aadhaar">Aadhaar</option>
+                    <option value="PAN">PAN</option>
+                    <option value="VoterID">Voter ID</option>
+                    <option value="Passport">Passport</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 500, display: "block", marginBottom: "0.35rem" }}>ID Proof URL</label>
+                  <input type="url" value={verifForm.idProofUrl} onChange={e => setVerifForm({ ...verifForm, idProofUrl: e.target.value })} placeholder="https://example.com/aadhaar.jpg" required style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 500, display: "block", marginBottom: "0.35rem" }}>Selfie URL</label>
+                  <input type="url" value={verifForm.selfieUrl} onChange={e => setVerifForm({ ...verifForm, selfieUrl: e.target.value })} placeholder="https://example.com/selfie.jpg" required style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px" }} />
+                </div>
+                {error && <p style={{ color: "var(--danger)", fontSize: "0.85rem" }}>{error}</p>}
+                <button type="submit" className="btn-primary" disabled={verifSubmitting} style={{ padding: "0.75rem" }}>
+                  {verifSubmitting ? "Submitting..." : "Submit for Verification"}
+                </button>
+              </form>
+            )}
+          </div>
         )}
 
         {tab === "earnings" && earnings && (
