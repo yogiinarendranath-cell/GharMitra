@@ -132,12 +132,56 @@ export default function App() {
     setError(null);
     try {
       const order = await api.payBooking(b.id);
+      
       if (order.isMock) {
+        // ─── MOCK MODE ───
         if (!confirm(`[MOCK MODE] Simulate successful payment of \u20b9${order.amount}?`)) return;
-        await api.verifyPayment(b.id, { razorpayOrderId: order.orderId, razorpayPaymentId: `pay_mock_${Date.now()}`, razorpaySignature: "mock_signature" });
+        await api.verifyPayment(b.id, {
+          razorpayOrderId: order.orderId,
+          razorpayPaymentId: `pay_mock_${Date.now()}`,
+          razorpaySignature: "mock_signature"
+        });
         setBookings(await api.myBookings());
+        return;
       }
-    } catch (err) { setError((err as Error).message); }
+      
+      // ─── REAL RAZORPAY MODE ───
+      const rzp = new (window as any).Razorpay({
+        key: order.keyId,
+        amount: Math.round(order.amount * 100),  // convert to paise
+        currency: order.currency || "INR",
+        name: "GharMitra",
+        description: `Booking ${order.bookingNumber}`,
+        order_id: order.orderId,
+        prefill: {
+          name: order.customerName,
+          email: order.customerEmail,
+          contact: order.customerPhone
+        },
+        theme: { color: "#DC2626" },
+        handler: async function (response: any) {
+          try {
+            await api.verifyPayment(b.id, {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            setBookings(await api.myBookings());
+            alert("Payment successful! Your booking is confirmed.");
+          } catch (err) {
+            setError(`Payment verification failed: ${(err as Error).message}`);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setError("Payment cancelled. Your booking is still unpaid.");
+          }
+        }
+      });
+      rzp.open();
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
   function cancel(b: BookingDto) {
