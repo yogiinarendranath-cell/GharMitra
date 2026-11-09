@@ -43,6 +43,8 @@ export default function App() {
     return (params.get("code") ?? "").trim().toUpperCase();
   });
 
+  const [rescheduleTarget, setRescheduleTarget] = useState<BookingDto | null>(null);
+  const [newDateTime, setNewDateTime] = useState<string>("");
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<BookingDto | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
@@ -211,6 +213,27 @@ export default function App() {
     } catch (err) { setError((err as Error).message); }
   }
 
+  function openReschedule(b: BookingDto) {
+    setRescheduleTarget(b);
+    const dt = new Date(b.scheduledStartUtc);
+    dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+    setNewDateTime(dt.toISOString().slice(0, 16));
+  }
+
+  async function confirmReschedule() {
+    if (!rescheduleTarget || !newDateTime) return;
+    setError(null);
+    try {
+      await api.rescheduleBooking(rescheduleTarget.id, new Date(newDateTime).toISOString());
+      setRescheduleTarget(null);
+      setNewDateTime("");
+      setBookings(await api.myBookings());
+      alert("Booking rescheduled successfully.");
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   function logout() { disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setLive(null); }
 
   if (!session) {
@@ -339,6 +362,9 @@ export default function App() {
                 {!["Completed", "Cancelled"].includes(b.status) && (
                   <button onClick={() => cancel(b)} className="btn-danger btn-sm">Cancel</button>
                 )}
+                {!["Completed", "Cancelled"].includes(b.status) && b.paymentStatus === "Paid" && (
+                  <button onClick={() => openReschedule(b)} className="btn-outline btn-sm" style={{ marginRight: "0.35rem" }}>Reschedule</button>
+                )}
               </div>
             </div>
           ))}
@@ -409,6 +435,38 @@ export default function App() {
           </div>
         </div>
       )}
+      {rescheduleTarget && (
+        <div className="modal-backdrop" onClick={() => setRescheduleTarget(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+            <h2 style={{ marginBottom: "0.5rem" }}>Reschedule Booking?</h2>
+            <p style={{ color: "var(--text-muted)", marginBottom: "1rem", fontSize: "0.9rem" }}>
+              {rescheduleTarget.bookingNumber} {"\u00b7"} {rescheduleTarget.serviceName}
+            </p>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+              Current: {new Date(rescheduleTarget.scheduledStartUtc).toLocaleString()}
+            </p>
+            <label style={{ fontSize: "0.85rem", fontWeight: 500, display: "block", marginBottom: "0.35rem" }}>
+              New date & time
+            </label>
+            <input
+              type="datetime-local"
+              value={newDateTime}
+              onChange={e => setNewDateTime(e.target.value)}
+              style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", marginBottom: "1rem" }}
+            />
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+              Reschedule is free if more than 24 hours before service.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button onClick={() => setRescheduleTarget(null)} className="btn-outline" style={{ flex: 1, padding: "0.75rem" }}>Cancel</button>
+              <button onClick={confirmReschedule} disabled={!newDateTime} className="btn-primary" style={{ flex: 1, padding: "0.75rem" }}>
+                Confirm Reschedule
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
             {cancelTarget && (
         <CancelBookingModal
           booking={cancelTarget}

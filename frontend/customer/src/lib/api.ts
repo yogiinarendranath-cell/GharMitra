@@ -137,6 +137,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ reason: reason ?? null }),
     }),
+  rescheduleBooking: (id: string, newScheduledStartUtc: string) =>
+    request<BookingDto>(`/api/bookings/${id}/reschedule`, { method: "POST", body: JSON.stringify({ newScheduledStartUtc }) }),
   payBooking: (id: string) => request<any>(`/api/bookings/${id}/pay`, { method: "POST" }),
   canReview: (id: string) => request<boolean>(`/api/professionals/bookings/${id}/can-review`),
   submitReview: (id: string, body: { rating: number; comment?: string }) =>
