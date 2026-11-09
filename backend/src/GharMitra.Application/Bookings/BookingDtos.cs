@@ -11,6 +11,8 @@ public record CreateBookingRequest(
 
 public record CancelBookingRequest(string? Reason);
 
+public record RescheduleBookingRequest(DateTime NewScheduledStartUtc);
+
 public record BookingDto(
     Guid Id,
     string BookingNumber,

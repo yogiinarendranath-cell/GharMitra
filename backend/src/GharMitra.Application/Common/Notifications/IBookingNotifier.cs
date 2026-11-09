@@ -1,6 +1,6 @@
 namespace GharMitra.Application.Common.Notifications;
 
-public enum BookingEventType { Created, Assigned, Accepted, Cancelled }
+public enum BookingEventType { Created, Assigned, Accepted, Cancelled, Updated }
 
 public record BookingNotificationDto(
     Guid BookingId,

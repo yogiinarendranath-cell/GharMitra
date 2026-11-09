@@ -173,6 +173,51 @@ public class BookingService : IBookingService
             booking.Assignment?.Professional.Longitude);
     }
 
+    public async Task<BookingDto> RescheduleAsync(Guid customerUserId, Guid bookingId, DateTime newStartUtc, CancellationToken ct = default)
+    {
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.UserId == customerUserId, ct)
+            ?? throw new InvalidOperationException("Customer not found.");
+
+        var booking = await _db.Bookings
+            .Include(b => b.Service)
+            .Include(b => b.Assignment).ThenInclude(a => a!.Professional).ThenInclude(p => p.User)
+            .FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == customer.Id, ct)
+            ?? throw new InvalidOperationException("Booking not found.");
+
+        if (booking.Status is BookingStatus.Cancelled or BookingStatus.Completed)
+            throw new InvalidOperationException($"Cannot reschedule a booking in status {booking.Status}.");
+
+        if (booking.Status == BookingStatus.InProgress)
+            throw new InvalidOperationException("Cannot reschedule a booking that has already started.");
+
+        if (newStartUtc < DateTime.UtcNow.AddHours(1))
+            throw new InvalidOperationException("New scheduled time must be at least 1 hour in the future.");
+
+        var hoursUntilOriginal = (booking.ScheduledStartUtc - DateTime.UtcNow).TotalHours;
+        if (hoursUntilOriginal < 24)
+            throw new InvalidOperationException("Reschedule is only allowed more than 24 hours before the original service time. Please cancel and rebook if less than 24 hours remain.");
+
+        booking.ScheduledStartUtc = newStartUtc.ToUniversalTime();
+        booking.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        await _notifier.NotifyAsync(BookingEventType.Updated, new BookingNotificationDto(
+            booking.Id, booking.BookingNumber, booking.Service.Name, booking.Status.ToString(),
+            booking.AddressLine, booking.City, booking.TotalAmount, booking.ScheduledStartUtc,
+            booking.Assignment?.Professional.User.FullName, customerUserId,
+            booking.Assignment?.Professional.UserId, DateTime.UtcNow), ct);
+
+        return new BookingDto(
+            booking.Id, booking.BookingNumber, booking.Service.Name,
+            booking.ScheduledStartUtc, booking.DurationMinutes, booking.AddressLine, booking.City,
+            booking.TotalAmount, booking.Status.ToString(), booking.PaymentStatus.ToString(),
+            booking.Assignment?.Professional.User.FullName,
+            booking.Assignment?.Professional.Latitude,
+            booking.Assignment?.Professional.Longitude,
+            booking.RefundAmount, booking.RefundedAtUtc, booking.RefundReason);
+    }
+
     public async Task<RefundResultDto> RefundAsync(
         Guid customerUserId,
         Guid bookingId,
