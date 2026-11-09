@@ -99,13 +99,7 @@ public class BookingsController : ControllerBase
 
     // ───── REFUND ENDPOINT ─────
 
-        [HttpPost("{id:guid}/reschedule")]
-    public async Task<ActionResult<BookingDto>> Reschedule(Guid id, RescheduleBookingRequest request, CancellationToken ct)
-    {
-        try { return Ok(await _bookings.RescheduleAsync(CurrentUserId, id, request.NewScheduledStartUtc, ct)); }
-        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-    }
-[HttpPost("{id:guid}/refund")]
+    [HttpPost("{id:guid}/refund")]
     public async Task<ActionResult<RefundResultDto>> Refund(
         Guid id,
         [FromBody] RefundRequest request,
