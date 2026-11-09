@@ -66,6 +66,9 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsTest")
+                        .HasColumnType("boolean");
+
                     b.Property<double?>("Latitude")
                         .HasColumnType("double precision");
 
@@ -129,7 +132,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("Bookings");
+                    b.ToTable("Bookings", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.BookingAssignment", b =>
@@ -169,7 +172,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ProfessionalId");
 
-                    b.ToTable("BookingAssignments");
+                    b.ToTable("BookingAssignments", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Coupon", b =>
@@ -234,7 +237,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("Coupons");
+                    b.ToTable("Coupons", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.CouponRedemption", b =>
@@ -273,7 +276,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.HasIndex("CouponId", "BookingId")
                         .IsUnique();
 
-                    b.ToTable("CouponRedemptions");
+                    b.ToTable("CouponRedemptions", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Customer", b =>
@@ -315,7 +318,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Professional", b =>
@@ -387,7 +390,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Professionals");
+                    b.ToTable("Professionals", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Referral", b =>
@@ -446,7 +449,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ReferrerCustomerId");
 
-                    b.ToTable("Referrals");
+                    b.ToTable("Referrals", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Review", b =>
@@ -486,7 +489,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ProfessionalId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Service", b =>
@@ -526,7 +529,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ServiceCategoryId");
 
-                    b.ToTable("Services");
+                    b.ToTable("Services", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.ServiceCategory", b =>
@@ -565,7 +568,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("ServiceCategories");
+                    b.ToTable("ServiceCategories", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.User", b =>
@@ -628,7 +631,7 @@ namespace GharMitra.Infrastructure.Persistence.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("GharMitra.Domain.Entities.Booking", b =>
