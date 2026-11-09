@@ -354,3 +354,42 @@ tr:hover td { background: #F9FAFB; }
   h2 { font-size: 1.25rem !important; }
   h3 { font-size: 1.1rem !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════ */
+/* FIX — Rate Job button overflow on mobile                    */
+/* Booking row items must wrap when content is too wide        */
+/* ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  .booking-item {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .booking-item > div:first-child {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  
+  .booking-item > div:last-child {
+    flex: 1 1 100%;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-start;
+  }
+  
+  .booking-item > div:last-child > button {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  /* Also handle cases where action buttons are direct children */
+  .booking-item button {
+    white-space: nowrap;
+  }
+  
+  /* Map: prevent leaflet from overflowing */
+  .leaflet-container {
+    max-width: 100% !important;
+  }
+}
