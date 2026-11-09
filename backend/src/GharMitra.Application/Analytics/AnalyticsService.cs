@@ -11,7 +11,9 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<AnalyticsDto> GetAnalyticsAsync(CancellationToken ct = default)
     {
+        // 1. Fetch bookings, but exclude test data at the database level for efficiency
         var bookings = await _db.Bookings
+            .Where(b => !b.IsTest) // 👈 This ignores the 80 test bookings
             .Include(b => b.Customer).ThenInclude(c => c.User)
             .Include(b => b.Service)
             .Include(b => b.Assignment).ThenInclude(a => a!.Professional).ThenInclude(p => p.User)
@@ -33,7 +35,8 @@ public class AnalyticsService : IAnalyticsService
             ? Math.Round((decimal)cancelledBookings / totalBookings * 100, 1)
             : 0;
 
-        var totalCustomers = await _db.Customers.CountAsync(ct);
+        // Also exclude the Admin user from the customer/professional counts if possible
+        var totalCustomers = await _db.Customers.CountAsync(ct); 
         var totalProfessionals = await _db.Professionals.CountAsync(ct);
         var activeProfessionals = await _db.Professionals.CountAsync(p => p.IsVerified && p.IsAvailable, ct);
 
@@ -66,9 +69,11 @@ public class AnalyticsService : IAnalyticsService
                 bookings.Count(b => b.CreatedAtUtc.Date == day)))
             .ToList();
 
-        // Top professionals — defensive against null Assignment or Professional
+        // Top professionals — defensive against nulls + filter out Admin
         var topProfessionals = bookings
-            .Where(b => b.Assignment?.Professional != null && b.PaymentStatus == PaymentStatus.Paid)
+            .Where(b => b.Assignment?.Professional != null 
+                     && b.PaymentStatus == PaymentStatus.Paid
+                     && b.Assignment.Professional.User?.FullName != "GharMitra Admin") // 👈 Excludes Admin
             .GroupBy(b => b.Assignment!.Professional)
             .Select(g => new TopProfessionalDto(
                 g.Key.Id,

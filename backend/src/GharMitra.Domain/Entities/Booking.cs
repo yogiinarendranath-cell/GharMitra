@@ -1,10 +1,12 @@
-using GharMitra.Domain.Common;
+﻿using GharMitra.Domain.Common;
 using GharMitra.Domain.Enums;
 
 namespace GharMitra.Domain.Entities;
 
 public class Booking : BaseEntity
 {
+    public bool IsTest { get; set; } = false;
+
     public string BookingNumber { get; set; } = string.Empty;
     public Guid CustomerId { get; set; }
     public Customer Customer { get; set; } = null!;
@@ -45,3 +47,5 @@ public class Booking : BaseEntity
     public decimal? DiscountAmount { get; set; }
     public decimal OriginalAmount { get; set; }
 }
+
+
