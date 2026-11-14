@@ -63,7 +63,7 @@ public class ReferralService : IReferralService
 
         var referrals = await _db.Referrals
             .Include(r => r.RefereeCustomer)
-            .ThenInclude(rc => rc.User)
+            .ThenInclude(rc => rc!.User)
             .Where(r => r.ReferrerCustomerId == customer.Id)
             .OrderByDescending(r => r.CreatedAtUtc)
             .ToListAsync(ct);

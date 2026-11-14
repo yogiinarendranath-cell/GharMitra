@@ -29,8 +29,8 @@ const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1581578731548-c64695cc6
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("gate@test.local");
-  const [password, setPassword] = useState("Test@1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("Test User");
   const [phoneNumber, setPhoneNumber] = useState("+919876543210");
   const [city, setCity] = useState("Pune");

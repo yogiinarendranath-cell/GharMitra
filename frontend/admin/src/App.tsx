@@ -17,8 +17,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [email, setEmail] = useState("admin@gharmitra.local");
-  const [password, setPassword] = useState("Admin@1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [refundTarget, setRefundTarget] = useState<BookingDto | null>(null);
   const [showOnlyRefunded, setShowOnlyRefunded] = useState(false);
   const [showTestBookings, setShowTestBookings] = useState(false);

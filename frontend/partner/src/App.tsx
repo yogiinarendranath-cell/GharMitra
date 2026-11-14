@@ -24,8 +24,8 @@ export default function App() {
   const [verifSubmitting, setVerifSubmitting] = useState(false);
   const [tab, setTab] = useState<Tab>("jobs");
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState("pro@gharmitra.local");
-  const [password, setPassword] = useState("Pro@1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function refreshAll() {
