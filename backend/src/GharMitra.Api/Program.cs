@@ -27,6 +27,12 @@ builder.Services.AddApplication();
 builder.Services.AddHttpClient();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// ─── DataProtection: persist keys in the database ───
+// Ensures encryption keys survive Render redeploys (sessions stay valid).
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<GharMitra.Infrastructure.Persistence.GharMitraDbContext>()
+    .SetApplicationName("GharMitra");
+
 builder.Services.AddScoped<IBookingNotifier, BookingNotifier>();
 builder.Services.AddSignalR();
 
