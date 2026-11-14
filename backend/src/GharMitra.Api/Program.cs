@@ -20,15 +20,6 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning));
 
-// ─── DataProtection: persist keys to disk so sessions survive redeploys ───
-var dataProtectionPath = "/root/.aspnet/DataProtection-Keys";
-if (!Directory.Exists(dataProtectionPath))
-{
-    Directory.CreateDirectory(dataProtectionPath);
-}
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
-    .SetApplicationName("GharMitra");
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
