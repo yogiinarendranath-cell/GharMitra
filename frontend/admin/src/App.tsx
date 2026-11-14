@@ -21,6 +21,7 @@ export default function App() {
   const [password, setPassword] = useState("Admin@1234");
   const [refundTarget, setRefundTarget] = useState<BookingDto | null>(null);
   const [showOnlyRefunded, setShowOnlyRefunded] = useState(false);
+  const [showTestBookings, setShowTestBookings] = useState(false);
   const [verificationQueue, setVerificationQueue] = useState<VerificationStatusDto[]>([]);
   const [verifBusy, setVerifBusy] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<VerificationStatusDto | null>(null);
@@ -99,6 +100,18 @@ export default function App() {
     } catch (err) {
       setError("Refund failed: " + (err as Error).message);
     }
+  }
+
+  function isTestBooking(b: BookingDto): boolean {
+    const testPatterns = [
+      'e2e', 'test', 'refund', 'diag', 'coupon', 'rate limit',
+      'revert', 'restore', 'hotfix', '500', 'no verified', 'no payment',
+      'live test', 'full refund flow', 'first only', 'next day',
+      'final test', 'eod', 'post-', 'morning rate', 'pay diag',
+      'rate test', 'rate limit test', 'payment diag', 'final rate'
+    ];
+    const address = (b.addressLine || '').toLowerCase();
+    return testPatterns.some(p => address.includes(p));
   }
   function logout() {
     disconnectBookingHub(); setToken(null); setSession(null); setBookings([]); setPros([]); setAnalytics(null); setLive(null);
@@ -410,11 +423,19 @@ export default function App() {
             />
             Show only refunded bookings
           </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", fontSize: "0.9rem" }}>
+            <input
+              type="checkbox"
+              checked={showTestBookings}
+              onChange={e => setShowTestBookings(e.target.checked)}
+            />
+            Show test bookings (dev)
+          </label>
           <div className="table-container">
             <table>
               <thead><tr><th>Booking</th><th>Service</th><th>Amount</th><th>Status</th><th>Professional</th><th>Action</th></tr></thead>
               <tbody>
-                {bookings.filter(b => !showOnlyRefunded || !!b.refundedAtUtc).map(b => (
+                {bookings.filter(b => !showOnlyRefunded || !!b.refundedAtUtc).filter(b => showTestBookings || !isTestBooking(b)).map(b => (
                   <tr key={b.id}>
                     <td><strong>{b.bookingNumber}</strong><br/><span style={{fontSize:"0.8rem", color:"var(--text-muted)"}}>{b.city}</span></td>
                     <td>{b.serviceName}</td>
