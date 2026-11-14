@@ -1,12 +1,11 @@
 using GharMitra.Application.Common.Interfaces;
 using GharMitra.Domain.Common;
 using GharMitra.Domain.Entities;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace GharMitra.Infrastructure.Persistence;
 
-public class GharMitraDbContext : DbContext, IApplicationDbContext, IDataProtectionKeyContext
+public class GharMitraDbContext : DbContext, IApplicationDbContext
 {
     public GharMitraDbContext(DbContextOptions<GharMitraDbContext> options) : base(options) { }
 
@@ -21,9 +20,6 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext, IDataProtect
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<CouponRedemption> CouponRedemptions => Set<CouponRedemption>();
     public DbSet<Referral> Referrals => Set<Referral>();
-
-    // DataProtection keys table
-    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -160,11 +156,6 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext, IDataProtect
                 .HasForeignKey(x => x.ReferrerCustomerId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.RefereeCustomer).WithMany()
                 .HasForeignKey(x => x.RefereeCustomerId).OnDelete(DeleteBehavior.SetNull);
-        });
-
-        b.Entity<DataProtectionKey>(e =>
-        {
-            e.ToTable("DataProtectionKeys");
         });
     }
 }
