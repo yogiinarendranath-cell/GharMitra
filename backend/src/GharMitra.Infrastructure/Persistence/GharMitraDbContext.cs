@@ -22,6 +22,7 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
     public DbSet<Referral> Referrals => Set<Referral>();
 
     // DataProtection key ring — persisted in DB so sessions survive Render restarts/deploys.
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
