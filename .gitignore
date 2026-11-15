@@ -37,3 +37,6 @@ _audit_*/
 # Stray folders from Windows Explorer mishaps
 New folder/
 
+
+# Exact .bak (no timestamp) — future-proof
+*.bak
