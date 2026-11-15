@@ -21,8 +21,6 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
     public DbSet<CouponRedemption> CouponRedemptions => Set<CouponRedemption>();
     public DbSet<Referral> Referrals => Set<Referral>();
 
-    // DataProtection key ring — persisted in DB so sessions survive Render restarts/deploys.
-
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
