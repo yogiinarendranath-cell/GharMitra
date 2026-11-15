@@ -24,7 +24,8 @@ scripts/logs/
 
 ## OS
 .DS_Store
-Thumbs.dbcloudflared.exe
+Thumbs.db
+cloudflared.exe
 
 # Backup files from WriteAllText operations
 *.bak-*
