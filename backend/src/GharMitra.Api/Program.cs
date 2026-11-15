@@ -7,11 +7,11 @@ using GharMitra.Infrastructure;
 using GharMitra.Infrastructure.Persistence;
 using GharMitra.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +27,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddApplication();
 builder.Services.AddHttpClient();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// ─── DataProtection: persist keys to DB so sessions survive Render restarts/deploys ───
+// Render Free has no persistent disk; the DB is the only durable store.
+// Requires: GharMitraDbContext : IDataProtectionKeyContext + AddDataProtectionKeys migration.
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<GharMitraDbContext>()
+    .SetApplicationName("GharMitra");
 
 builder.Services.AddScoped<IBookingNotifier, BookingNotifier>();
 builder.Services.AddSignalR();
@@ -152,4 +159,3 @@ app.MapHub<BookingHub>("/hubs/booking");
 }
 
 app.Run();
-
