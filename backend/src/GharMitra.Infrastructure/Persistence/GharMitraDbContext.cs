@@ -2,11 +2,10 @@ using GharMitra.Application.Common.Interfaces;
 using GharMitra.Domain.Common;
 using GharMitra.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 
 namespace GharMitra.Infrastructure.Persistence;
 
-public class GharMitraDbContext : DbContext, IApplicationDbContext, IDataProtectionKeyContext
+public class GharMitraDbContext : DbContext, IApplicationDbContext
 {
     public GharMitraDbContext(DbContextOptions<GharMitraDbContext> options) : base(options) { }
 
