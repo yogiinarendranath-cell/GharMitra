@@ -31,11 +31,9 @@ cloudflared.exe
 *.bak-*
 *.broken-*
 *.mojibake-*
-*.bak-*
 # Audit dumps (local only)
 _audit_*/
 
 # Stray folders from Windows Explorer mishaps
 New folder/
-New Folder/
 
