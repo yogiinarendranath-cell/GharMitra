@@ -37,8 +37,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddApplication();
 builder.Services.AddHttpClient();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
-
 
 builder.Services.AddScoped<IBookingNotifier, BookingNotifier>();
 builder.Services.AddSignalR();
