@@ -24,3 +24,6 @@ public record AuthResponse(
     string Role,
     bool IsEmailVerified,
     bool IsPhoneVerified);
+
+public record ForgotPasswordRequest(string Email);
+public record ResetPasswordRequest(string Token, string NewPassword);

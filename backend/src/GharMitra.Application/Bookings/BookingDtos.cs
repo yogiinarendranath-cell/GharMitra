@@ -1,3 +1,5 @@
+using GharMitra.Domain.Enums;
+
 namespace GharMitra.Application.Bookings;
 
 public record CreateBookingRequest(
@@ -11,7 +13,22 @@ public record CreateBookingRequest(
 
 public record CancelBookingRequest(string? Reason);
 
-public record RescheduleBookingRequest(DateTime NewScheduledStartUtc);
+public record BookingDto(
+    Guid Id,
+    string BookingNumber,
+    string ServiceName,
+    DateTime ScheduledStartUtc,
+    int DurationMinutes,
+    string AddressLine,
+    string City,
+    decimal TotalAmount,
+    string Status,
+    string PaymentStatus,
+    string? ProfessionalName);
+
+public record AssignBookingRequest(Guid ProfessionalId);
+
+public record AdminProfessionalDto(Guid Id, string FullName, string City, bool IsVerified, bool IsAvailable, decimal Rating);
 
 public record BookingDto(
     Guid Id,
@@ -25,18 +42,7 @@ public record BookingDto(
     string Status,
     string PaymentStatus,
     string? ProfessionalName,
-    double? ProfessionalLatitude = null,
-    double? ProfessionalLongitude = null,
-    decimal? RefundAmount = null,
-    DateTime? RefundedAtUtc = null,
-    string? RefundReason = null);
-
-public record RefundResultDto(
-    bool Success,
-    decimal AmountRefunded,
-    string Reason,
-    string Message);
-
-public record AssignBookingRequest(Guid ProfessionalId);
-
-public record AdminProfessionalDto(Guid Id, string FullName, string City, bool IsVerified, bool IsAvailable, decimal Rating);
+    double? ProfessionalLatitude,  // <-- NEW
+    double? ProfessionalLongitude  // <-- NEW
+    bool IsTest = false);    // ← ADD THIS
+);

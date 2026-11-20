@@ -24,4 +24,8 @@ public class User : BaseEntity
 
     public Customer? Customer { get; set; }
     public Professional? Professional { get; set; }
+
+    // Password Reset
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiryUtc { get; set; }
 }

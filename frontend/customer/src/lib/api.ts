@@ -128,6 +128,19 @@ export const api = {
     request<AuthResponse>("/api/auth/verify-otp", { method: "POST", body: JSON.stringify(body) }),
   verifyPhone: (body: { email: string; code: string }) =>
     request<AuthResponse>("/api/auth/verify-phone", { method: "POST", body: JSON.stringify(body) }),
+  
+  // ───── Password Reset ─────
+  forgotPassword: (email: string) =>
+    request<{ message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ message: string }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }),
+
   services: () => request<ServiceCategoryDto[]>("/api/services"),
   createBooking: (body: unknown) =>
     request<BookingDto>("/api/bookings", { method: "POST", body: JSON.stringify(body) }),

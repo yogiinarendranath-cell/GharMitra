@@ -20,6 +20,7 @@ public class GharMitraDbContext : DbContext, IApplicationDbContext
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<CouponRedemption> CouponRedemptions => Set<CouponRedemption>();
     public DbSet<Referral> Referrals => Set<Referral>();
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

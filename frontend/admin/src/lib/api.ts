@@ -1,4 +1,4 @@
-const BASE = "https://gharmitra-api.onrender.com";
+﻿const BASE = "https://gharmitra-api.onrender.com";
 
 export type AuthResponse = {
   token: string;
@@ -135,7 +135,7 @@ export type CouponAnalyticsDto = {
 };
 
 
-// ───── Referral types (admin) ─────
+// â”€â”€â”€â”€â”€ Referral types (admin) â”€â”€â”€â”€â”€
 export type AdminReferralListDto = {
   id: string;
   referrerName: string;
@@ -194,6 +194,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const adminApi = {
   login: (body: unknown) =>
     request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
+  forgotPassword: (email: string) =>
+    request<{ message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ message: string }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }),
   bookings: () => request<BookingDto[]>("/api/admin/bookings"),
   professionals: () => request<ProfessionalDto[]>("/api/admin/professionals"),
   analytics: () => request<AnalyticsDto>("/api/admin/analytics"),
@@ -228,7 +238,7 @@ export const adminApi = {
     return request<CouponAnalyticsDto>(`/api/admin/coupons/analytics?days=${days}`);
   },
 
-  // ─── Verification Queue ───
+  // â”€â”€â”€ Verification Queue â”€â”€â”€
   getVerificationQueue: () => request<VerificationStatusDto[]>("/api/admin/verifications/queue"),
   approveVerification: (id: string) =>
     request<VerificationStatusDto>(`/api/admin/verifications/${id}/approve`, { method: "POST" }),

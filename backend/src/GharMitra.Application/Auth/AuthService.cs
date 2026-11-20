@@ -123,6 +123,44 @@ public class AuthService : IAuthService
         return Build(user);
     }
 
+    
+    public async Task ForgotPasswordAsync(string email, CancellationToken ct = default)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive, ct);
+        
+        // Security: never reveal if email exists
+        if (user == null) return;
+
+        var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+        user.PasswordResetToken = token;
+        user.PasswordResetTokenExpiryUtc = DateTime.UtcNow.AddHours(1);
+        user.UpdatedAtUtc = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        // TODO: Wire up password reset email — for now, log token (dev only)
+        // try { await _emailService.SendPasswordResetEmailAsync(user.Email, user.FullName, token, ct); } catch { }
+    }
+
+    public async Task ResetPasswordAsync(string token, string newPassword, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("Reset token is required.");
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+            throw new InvalidOperationException("Password must be at least 6 characters.");
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == token, ct)
+            ?? throw new InvalidOperationException("Invalid or expired reset token.");
+
+        if (user.PasswordResetTokenExpiryUtc < DateTime.UtcNow)
+            throw new InvalidOperationException("Reset token has expired.");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiryUtc = null;
+        user.UpdatedAtUtc = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+    }
     private AuthResponse Build(User user)
     {
         var (token, expires) = _jwt.GenerateToken(user);
